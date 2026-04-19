@@ -1,0 +1,48 @@
+[gd_scene load_steps=11 format=3 uid="uid://6h6gfsxf4xjv"]
+
+[ext_resource type="Script" path="res://scripts/core/base_entity_view.gd" id="1_v8anl"]
+[ext_resource type="Texture2D" uid="uid://73jt5ywc0mg5" path="res://assets/Character/Forest.png" id="2_7btyh"]
+[ext_resource type="Texture2D" uid="uid://ts6tgh1335py" path="res://assets/Character/Dungeon_Character.png" id="2_uil4a"]
+[ext_resource type="Texture2D" uid="uid://bjl43ydjd2hsj" path="res://assets/Character/player.png" id="4_afv6t"]
+[ext_resource type="Texture2D" uid="uid://mn8gsdrg6yy0" path="res://assets/Terrain/Decorations/Rocks/Rock1.png" id="5_igl3s"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_iq2pf"]
+atlas = ExtResource("2_7btyh")
+region = Rect2(11, 143, 70, 98)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qh2ak"]
+atlas = ExtResource("2_uil4a")
+region = Rect2(96, 48, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_y7eta"]
+atlas = ExtResource("4_afv6t")
+region = Rect2(115, 48, 69, 150)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mvqol"]
+bg_color = Color(0, 0, 0, 0.352941)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sk1cq"]
+bg_color = Color(0.870588, 0, 0, 1)
+
+[node name="BaseEntityView" type="Node2D"]
+script = ExtResource("1_v8anl")
+tex_organic = SubResource("AtlasTexture_iq2pf")
+tex_mechanical = SubResource("AtlasTexture_qh2ak")
+tex_player = SubResource("AtlasTexture_y7eta")
+tex_static = ExtResource("5_igl3s")
+scale_mechanical = Vector2(3, 3)
+scale_player = Vector2(0.8, 0.8)
+scale_static = Vector2(2, 2)
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+
+[node name="HealthBar" type="ProgressBar" parent="."]
+visible = false
+custom_minimum_size = Vector2(32, 4)
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 1.0
+grow_horizontal = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_mvqol")
+theme_override_styles/fill = SubResource("StyleBoxFlat_sk1cq")
+show_percentage = false

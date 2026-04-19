@@ -1,0 +1,13 @@
+# Godot-specific ignores
+.godot/
+.import/
+export_preset.cfg
+*.translation
+.history/
+
+# OS-specific ignores
+.DS_Store
+Thumbs.db
+
+# Project Zero specific
+# 如果你以后有不想传的大型美术源文件，可以加在这里
