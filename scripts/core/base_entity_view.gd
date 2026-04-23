@@ -29,6 +29,7 @@ var health_bar: ProgressBar = null
 # 动画和调试状态
 var attack_tween: Tween = null
 var damage_tween: Tween = null
+var harvest_tween: Tween = null
 var debug_attack_origin: Vector2 = Vector2.ZERO
 var debug_attack_dir: Vector2 = Vector2.RIGHT
 var debug_radius: float = 40.0
@@ -295,6 +296,10 @@ func _draw() -> void:
 func _exit_tree() -> void:
 	if data != null and WorldManager.world_ticked.is_connected(_on_world_tick):
 		WorldManager.world_ticked.disconnect(_on_world_tick)
+	if EventBus.entity_damaged.is_connected(_on_entity_damaged):
+		EventBus.entity_damaged.disconnect(_on_entity_damaged)
+	if EventBus.resource_harvested.is_connected(_on_resource_harvested):
+		EventBus.resource_harvested.disconnect(_on_resource_harvested)
 
 	print("实体视图已清理: ", data.id if data != null else "unknown")
 
@@ -317,6 +322,8 @@ func _connect_damage_events() -> void:
 	# 我们只需要防重复连接即可
 	if not EventBus.entity_damaged.is_connected(_on_entity_damaged):
 		EventBus.entity_damaged.connect(_on_entity_damaged)
+	if not EventBus.resource_harvested.is_connected(_on_resource_harvested):
+		EventBus.resource_harvested.connect(_on_resource_harvested)
 
 
 # 实体受伤事件处理
@@ -381,3 +388,50 @@ func _play_knockback_anim(attacker_pos: Vector2) -> void:
 	data.position += knockback_dir * knockback_distance
 
 	print("击退效果: ", data.id, " 被击退 ", knockback_distance, " 像素")
+
+
+# 采集动作动画（轻微压缩回弹）
+func play_harvest_anim() -> void:
+	if sprite_node == null:
+		return
+
+	if harvest_tween != null:
+		harvest_tween.kill()
+
+	harvest_tween = create_tween()
+	var original_scale: Vector2 = sprite_node.scale
+	harvest_tween.tween_property(sprite_node, "scale", original_scale * 1.08, 0.06)
+	harvest_tween.tween_property(sprite_node, "scale", original_scale, 0.08)
+
+
+# 玩家采集成功后的浮动数字反馈
+func _on_resource_harvested(harvester: EntityData, amount: float) -> void:
+	if data == null or harvester == null:
+		return
+	if data.entity_type != "player":
+		return
+	if data != harvester:
+		return
+
+	_spawn_floating_gain_text(amount)
+
+
+func _spawn_floating_gain_text(amount: float) -> void:
+	var gain_label := Label.new()
+	gain_label.text = "+" + str(int(round(amount)))
+	gain_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	gain_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	gain_label.z_index = 20
+	gain_label.position = Vector2(-20, -110)
+	gain_label.modulate = Color(1.0, 0.95, 0.4, 1.0)
+	add_child(gain_label)
+
+	var tween: Tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(gain_label, "position", gain_label.position + Vector2(0, -35), 0.45)
+	tween.tween_property(gain_label, "modulate:a", 0.0, 0.45)
+	tween.finished.connect(
+		func() -> void:
+			if is_instance_valid(gain_label):
+				gain_label.queue_free()
+	)

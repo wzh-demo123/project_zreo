@@ -14,14 +14,21 @@ extends Node2D
 
 # 内部计数器
 var total_spawned: int = 0
+var static_entity_views: Dictionary = {}  # key: static id, value: Node2D
+const STATIC_VIEW_TEXTURE: Texture2D = preload("res://assets/Terrain/Decorations/Rocks/Rock1.png")
 
 # 节点初始化
 func _ready() -> void:
 	# 连接世界加载信号，实现读档后的视觉重建
 	WorldManager.world_loaded.connect(_on_world_loaded)
+	if not EventBus.static_entity_spawned.is_connected(_on_static_entity_spawned):
+		EventBus.static_entity_spawned.connect(_on_static_entity_spawned)
+	if not EventBus.static_entity_depleted.is_connected(_on_static_entity_depleted):
+		EventBus.static_entity_depleted.connect(_on_static_entity_depleted)
 
 	# 延迟一帧生成，确保所有系统已初始化
 	call_deferred("spawn_all")
+	call_deferred("_rebuild_static_entity_views")
 
 # 读档后的视觉重建逻辑
 func _on_world_loaded() -> void:
@@ -33,6 +40,8 @@ func _on_world_loaded() -> void:
 
 	# 第二步：等待一帧，确保旧肉身已经彻底清理干净
 	await get_tree().process_frame
+	_clear_static_entity_views()
+	_rebuild_static_entity_views()
 
 	# 第三步：重生 - 根据WorldManager中的新灵魂重新塑造肉身
 	var player_entity: EntityData = null
@@ -61,6 +70,73 @@ func _on_world_loaded() -> void:
 	if player_entity != null:
 		# 通过EventBus或直接通知PlayerController
 		call_deferred("_notify_player_rebind", player_entity)
+
+
+# 静态实体生成后创建对应View
+func _on_static_entity_spawned(static_data: StaticEntityData) -> void:
+	_create_static_entity_view(static_data)
+
+
+# 资源耗尽后播放缩放消失动画并清理
+func _on_static_entity_depleted(static_data: StaticEntityData) -> void:
+	var view_node: Node2D = static_entity_views.get(static_data.id, null)
+	if view_node == null or not is_instance_valid(view_node):
+		return
+
+	var tween: Tween = create_tween()
+	tween.tween_property(view_node, "scale", Vector2.ZERO, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tween.finished.connect(
+		func() -> void:
+			if is_instance_valid(view_node):
+				view_node.queue_free()
+			static_entity_views.erase(static_data.id)
+	)
+
+
+# 重建所有静态实体视图（用于首帧补齐和读档重建）
+func _rebuild_static_entity_views() -> void:
+	for static_data in WorldManager.static_entities:
+		_create_static_entity_view(static_data)
+
+
+# 统一创建静态实体视图
+func _create_static_entity_view(static_data: StaticEntityData) -> void:
+	if static_data == null or static_data.is_depleted:
+		return
+	if static_entity_views.has(static_data.id):
+		return
+
+	var view_root: Node2D = Node2D.new()
+	view_root.name = "StaticView_" + static_data.id
+	view_root.position = static_data.position
+	view_root.set_meta("static_entity_id", static_data.id)
+
+	var sprite: Sprite2D = Sprite2D.new()
+	sprite.texture = STATIC_VIEW_TEXTURE
+	sprite.centered = true
+	view_root.add_child(sprite)
+
+	match static_data.type:
+		"heat_source":
+			view_root.scale = Vector2(1.6, 1.6)
+			sprite.modulate = Color(1.0, 0.55, 0.2, 0.95)
+		"resource":
+			view_root.scale = Vector2(1.8, 1.8)
+			sprite.modulate = Color(0.7, 1.0, 0.65, 1.0)
+		_:
+			view_root.scale = Vector2(1.6, 1.6)
+			sprite.modulate = Color.WHITE
+
+	add_child(view_root)
+	static_entity_views[static_data.id] = view_root
+
+
+# 清理静态实体视图缓存
+func _clear_static_entity_views() -> void:
+	for view_node in static_entity_views.values():
+		if is_instance_valid(view_node):
+			view_node.queue_free()
+	static_entity_views.clear()
 
 # 延迟通知PlayerController重绑玩家
 func _notify_player_rebind(player_data: EntityData) -> void:

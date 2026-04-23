@@ -17,3 +17,7 @@ signal player_stat_updated(key: String, value: Variant)  # 玩家状态更新
 
 # 静态实体信号：用于视觉层生成
 signal static_entity_spawned(static_data: StaticEntityData)  # 静态实体生成
+signal static_entity_depleted(static_data: StaticEntityData)  # 静态实体耗尽
+
+# 采集反馈信号：用于驱动UI与浮动数字
+signal resource_harvested(harvester: EntityData, amount: float)

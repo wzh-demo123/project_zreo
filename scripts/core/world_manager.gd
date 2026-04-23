@@ -18,6 +18,11 @@ signal world_loaded  # 世界加载完成信号
 @export_group("Time System")
 @export var day_length_seconds: float = 600.0  # 10分钟一个昼夜周期
 
+# --- 资源系统配置 ---
+@export_group("Resource System")
+@export var harvest_distance: float = 100.0  # 采集距离
+@export var base_harvest_gain: float = 10.0  # 基础采集收益
+
 # --- 运行时数据 ---
 var entities: Array[EntityData] = []
 var static_entities: Array[StaticEntityData] = []  # 静态实体数组
@@ -37,7 +42,17 @@ func _ready() -> void:
 
 # --- 核心逻辑 ---
 
+func _physics_process(delta: float) -> void:
+	# 10Hz物理步进：所有生存逻辑在此运行
+	_on_logic_tick(delta)
+
+# 废弃旧的_process，所有逻辑迁移到_physics_process
 func _process(delta: float) -> void:
+	# 保留空函数，避免Godot警告
+	pass
+
+# 10Hz逻辑步进中枢
+func _on_logic_tick(delta: float) -> void:
 	# 使用累加器确保固定步进
 	accumulator += delta
 	var tick_interval: float = 1.0 / ticks_per_second
@@ -56,6 +71,16 @@ func _generate_static_entities() -> void:
 	# 清空现有静态实体
 	static_entities.clear()
 
+	# 生成热源
+	_generate_heat_sources()
+
+	# 生成资源点
+	_generate_resource_entities()
+
+	print("[WorldManager] 静态实体生成完成，共生成 ", static_entities.size(), " 个静态实体")
+
+# 生成热源
+func _generate_heat_sources() -> void:
 	# 随机生成3-5个热源
 	var heat_source_count: int = randi() % 3 + 3  # 3-5个
 
@@ -72,8 +97,6 @@ func _generate_static_entities() -> void:
 		EventBus.static_entity_spawned.emit(heat_source)
 
 		print("[WorldManager] 生成热源: ", heat_source.get_debug_info())
-
-	print("[WorldManager] 静态实体生成完成，共生成 ", heat_source_count, " 个热源")
 
 # 获取世界边界内的随机位置
 func _get_random_position_within_bounds() -> Vector2:
@@ -112,6 +135,83 @@ func _get_player_entity() -> EntityData:
 		if entity.entity_type == "player":
 			return entity
 	return null
+
+# --- 资源采集系统 ---
+
+# 查找最近的资源点
+func _find_nearest_resource(player_pos: Vector2) -> StaticEntityData:
+	var nearest_resource: StaticEntityData = null
+	var min_distance: float = harvest_distance
+
+	for static_ent in static_entities:
+		# 只检查资源类型且未耗尽的实体
+		if static_ent.type == "resource" and not static_ent.is_depleted:
+			var distance: float = player_pos.distance_to(static_ent.position)
+			if distance < min_distance:
+				min_distance = distance
+				nearest_resource = static_ent
+
+	return nearest_resource
+
+# 采集资源
+func harvest_resource(player_data: EntityData) -> void:
+	var nearest_resource: StaticEntityData = _find_nearest_resource(player_data.position)
+
+	if nearest_resource == null:
+		print("[WorldManager] 附近没有可采集的资源")
+		EventBus.announcement.emit("附近没有可采集的资源")
+		return
+
+	# 计算采集收益
+	var harvest_gain: float = base_harvest_gain
+
+	# 禁忌加成：宜挖掘时收益翻倍
+	if CalendarManager.current_taboo == CalendarManager.Taboo.SUIT_DIGGING:
+		harvest_gain *= 2.0
+		print("[WorldManager] 禁忌加成：采集收益翻倍！")
+		EventBus.announcement.emit("宜挖掘：采集效率翻倍！")
+
+	# 采集资源
+	nearest_resource.resource_amount -= harvest_gain
+
+	# 更新玩家能量
+	player_data.energy += harvest_gain
+	player_data.energy = min(player_data.energy, 100.0)  # 上限100
+
+	# 发送状态更新信号
+	EventBus.player_stat_updated.emit("energy", player_data.energy)
+	EventBus.resource_harvested.emit(player_data, harvest_gain)
+
+	print("[WorldManager] 采集成功！获得能量: ", harvest_gain, " 剩余资源: ", nearest_resource.resource_amount)
+	EventBus.announcement.emit("采集成功！获得能量: " + str(harvest_gain))
+
+	# 检查资源是否耗尽
+	if nearest_resource.resource_amount <= 0.0:
+		nearest_resource.is_depleted = true
+		print("[WorldManager] 资源耗尽: ", nearest_resource.id)
+		EventBus.static_entity_depleted.emit(nearest_resource)
+		EventBus.announcement.emit("资源已耗尽")
+
+# 生成资源点（在静态实体生成函数中添加）
+func _generate_resource_entities() -> void:
+	# 生成2-4个资源点
+	var resource_count: int = randi() % 3 + 2  # 2-4个
+
+	for i in range(resource_count):
+		var resource: StaticEntityData = StaticEntityData.new()
+		resource.type = "resource"
+		resource.position = _get_random_position_within_bounds()
+		resource.resource_amount = randf_range(50.0, 100.0)  # 随机储量
+		resource.resource_type = "wood"  # 暂时固定为木材
+
+		static_entities.append(resource)
+
+		# 发送信号通知View层生成视觉表现
+		EventBus.static_entity_spawned.emit(resource)
+
+		print("[WorldManager] 生成资源点: ", resource.get_debug_info())
+
+	print("[WorldManager] 资源点生成完成，共生成 ", resource_count, " 个资源点")
 
 
 # world_manager.gd 中的核心逻辑更新

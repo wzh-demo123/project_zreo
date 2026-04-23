@@ -14,7 +14,8 @@ extends Resource
 # --- 类型特定属性 ---
 @export var heat_strength: float = 1.0          # 热源强度（仅热源类型）
 @export var resource_type: String = "wood"      # 资源类型（仅资源类型）
-@export var resource_amount: int = 100          # 资源数量（仅资源类型）
+@export var resource_amount: float = 10.0       # 资源储量（仅资源类型）
+@export var is_depleted: bool = false           # 是否已耗尽
 
 # --- 初始化函数 ---
 func _init() -> void:

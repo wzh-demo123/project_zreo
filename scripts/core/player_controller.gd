@@ -8,11 +8,16 @@ extends Node
 # 目标实体视图绑定
 @export var target_view: BaseEntityView = null
 
-# 战斗属性配置
-@export var attack_damage: float = 30.0  # 攻击伤害
-@export var attack_cooldown: float = 0.4  # 攻击冷却时间
-@export var attack_radius: float = 40.0  # 攻击判定扇形半径
-@export var attack_angle: float = 90.0  # 攻击扇形张角（度）
+# --- 战斗系统 ---
+@export_group("Combat")
+@export var attack_damage: float = 30.0
+@export var attack_cooldown: float = 0.4
+@export var attack_radius: float = 40.0
+@export var attack_angle: float = 90.0
+
+# --- 采集系统 ---
+@export_group("Harvest")
+@export var harvest_key: Key = KEY_E  # 采集按键
 
 # 内部状态变量
 var last_direction: Vector2 = Vector2.RIGHT  # 最后朝向
@@ -93,6 +98,21 @@ func _process(delta: float) -> void:
 	# 处理攻击输入
 	if Input.is_action_just_pressed("ui_accept") and attack_timer <= 0.0:
 		_handle_attack()
+
+	# 处理采集输入（单次触发，避免长按一帧多次采集）
+	if Input.is_physical_key_pressed(harvest_key) and Input.is_physical_key_just_pressed(harvest_key):
+		_trigger_harvest()
+
+# 触发采集
+func _trigger_harvest() -> void:
+	if not _is_target_valid():
+		return
+
+	# 调用WorldManager的采集函数
+	WorldManager.harvest_resource(target_view.data)
+
+	# 发送采集动画信号（可选）
+	target_view.play_harvest_anim()
 
 	# # 调试信息显示
 	# _debug_attack_info()
