@@ -1,0 +1,62 @@
+[gd_scene load_steps=3 format=4 uid="uid://debug_hud_tscn"]
+
+[ext_resource type="Script" path="res://scripts/ui/debug_hud.gd" id="1_debug"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0, 0, 0, 0.7)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 0
+corner_radius_bottom_left = 0
+
+[node name="DebugHUD" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_debug")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+anchors_preset = 0
+anchor_top = 0.0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 10.0
+margin_top = 10.0
+margin_right = -10.0
+margin_bottom = -10.0
+
+[node name="TimeLabel" type="Label" parent="VBoxContainer"]
+text = "时间: 第1天 - 00:00"
+label_settings = null
+
+[node name="TabooLabel" type="Label" parent="VBoxContainer"]
+text = "今日禁忌: 无禁忌"
+label_settings = null
+
+[node name="HealthLabel" type="Label" parent="VBoxContainer"]
+text = "生命: 100.0"
+label_settings = null
+
+[node name="EnergyLabel" type="Label" parent="VBoxContainer"]
+text = "能量: 100.0"
+label_settings = null
+
+[node name="TempLabel" type="Label" parent="VBoxContainer"]
+text = "体温: 36.5°C"
+label_settings = null
+
+[node name="AnnouncementLabel" type="Label" parent="VBoxContainer"]
+text = ""
+label_settings = null
+self_modulate = Color(1, 0.8, 0.2, 0.9)
+
+[node name="Panel" type="Panel" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 5)
+
+[node name="PanelContainer" type="PanelContainer" parent="VBoxContainer"]
+anchors_preset = 0
+anchor_top = 0.0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+custom_minimum_size = Vector2(300, 0)
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg")

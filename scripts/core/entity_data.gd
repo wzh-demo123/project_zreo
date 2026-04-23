@@ -11,8 +11,14 @@ extends Resource
 
 # --- 新增：生存与博弈属性 ---
 @export var move_speed: float = 50.0  # 移动速度
-@export var energy: float = 100.0     # 能量值
+@export var energy: float = 100.0     # 饥饿/能量
+@export var max_energy: float = 100.0 # 最大能量值
 @export var collision_radius: float = 20.0  # 碰撞半径
+
+# --- 新增：速度检测与体温系统 ---
+@export var last_position: Vector2 = Vector2.ZERO # 用于计算真实位移
+@export var temperature: float = 36.5              # 当前体温
+@export var is_near_heat_source: bool = false      # 是否靠近热源（由 WorldManager 判定）
 
 func age_step(ticks: int) -> void:
 	age_ticks += ticks

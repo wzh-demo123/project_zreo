@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=4 uid="uid://c3pno5hr8r6jo"]
+[gd_scene load_steps=13 format=4 uid="uid://c3pno5hr8r6jo"]
 
 [ext_resource type="Texture2D" uid="uid://b13nwsa6xoxb" path="res://assets/Terrain/Tileset/Tilemap_color1.png" id="1_1fjc7"]
 [ext_resource type="Script" path="res://scripts/core/world_spawner.gd" id="1_p6nn4"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://scripts/core/camera.gd" id="4_ocl17"]
 [ext_resource type="Script" path="res://scripts/core/entity_data.gd" id="4_q3diw"]
 [ext_resource type="Script" path="res://scripts/core/world_settings.gd" id="5_qn0tx"]
+[ext_resource type="PackedScene" path="res://scenes/ui/debug_hud.tscn" id="6_debug"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_63wuf"]
 texture = ExtResource("1_1fjc7")
@@ -71,7 +72,11 @@ position = Vector2(0, 0)
 age_ticks = 0
 move_speed = 150.0
 energy = 100.0
+max_energy = 100.0
 collision_radius = 20.0
+last_position = Vector2(0, 0)
+temperature = 36.5
+is_near_heat_source = false
 
 [node name="Main" type="Node2D"]
 
@@ -110,3 +115,5 @@ script = ExtResource("4_ocl17")
 target_node = NodePath("../Entities/Player")
 
 [node name="UI" type="CanvasLayer" parent="."]
+
+[node name="DebugHUD" parent="." instance=ExtResource("6_debug")]

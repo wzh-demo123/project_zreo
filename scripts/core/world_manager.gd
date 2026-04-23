@@ -7,17 +7,33 @@ extends Node
 
 # --- 信号 ---
 signal world_ticked(tick_count: int)
-signal world_loaded()  # 世界加载完成信号
+signal world_loaded  # 世界加载完成信号
 
 # --- 配置 ---
 @export_group("Simulation")
 @export var ticks_per_second: float = 10.0
 @export var world_bounds: Rect2 = Rect2(-600, -400, 1200, 800)  # 世界边界矩形
 
+# --- 律法时钟配置 ---
+@export_group("Time System")
+@export var day_length_seconds: float = 600.0  # 10分钟一个昼夜周期
+
 # --- 运行时数据 ---
 var entities: Array[EntityData] = []
+var static_entities: Array[StaticEntityData] = []  # 静态实体数组
 var current_tick: int = 0
 var accumulator: float = 0.0
+var world_time: float = 0.0  # 世界时间（秒）
+
+# --- 初始化 ---
+func _ready() -> void:
+	# 生成静态实体
+	_generate_static_entities()
+
+	print("WorldManager 初始化完成")
+	print("固定Tick频率: ", ticks_per_second, " Hz")
+	print("世界边界: ", world_bounds)
+	print("静态实体数量: ", static_entities.size())
 
 # --- 核心逻辑 ---
 
@@ -30,28 +46,209 @@ func _process(delta: float) -> void:
 		accumulator -= tick_interval
 		tick_step()
 
+	# 律法时钟步进（基于真实时间，不受固定tick影响）
+	_step_world_clock(delta)
+
+# --- 静态实体系统 ---
+
+# 生成静态实体（热源、资源点等）
+func _generate_static_entities() -> void:
+	# 清空现有静态实体
+	static_entities.clear()
+
+	# 随机生成3-5个热源
+	var heat_source_count: int = randi() % 3 + 3  # 3-5个
+
+	for i in range(heat_source_count):
+		var heat_source: StaticEntityData = StaticEntityData.new()
+		heat_source.type = "heat_source"
+		heat_source.position = _get_random_position_within_bounds()
+		heat_source.effect_radius = randf_range(80.0, 120.0)  # 随机半径80-120
+		heat_source.heat_strength = randf_range(0.8, 1.2)     # 随机强度0.8-1.2
+
+		static_entities.append(heat_source)
+
+		# 发送信号通知View层生成视觉表现
+		EventBus.static_entity_spawned.emit(heat_source)
+
+		print("[WorldManager] 生成热源: ", heat_source.get_debug_info())
+
+	print("[WorldManager] 静态实体生成完成，共生成 ", heat_source_count, " 个热源")
+
+# 获取世界边界内的随机位置
+func _get_random_position_within_bounds() -> Vector2:
+	var x: float = randf_range(world_bounds.position.x + 50, world_bounds.position.x + world_bounds.size.x - 50)
+	var y: float = randf_range(world_bounds.position.y + 50, world_bounds.position.y + world_bounds.size.y - 50)
+	return Vector2(x, y)
+
+# 更新玩家与静态实体的邻近效果
+func _update_proximity_effects(player_data: EntityData) -> void:
+	# 热源检测
+	var found_heat: bool = false
+
+	for static_ent in static_entities:
+		if static_ent.type == "heat_source":
+			var dist: float = player_data.position.distance_to(static_ent.position)
+			if dist < static_ent.effect_radius:
+				found_heat = true
+				break
+
+	# 更新玩家热源状态
+	var was_near_heat: bool = player_data.is_near_heat_source
+	player_data.is_near_heat_source = found_heat
+
+	# 状态变更反馈
+	if was_near_heat != found_heat:
+		if found_heat:
+			print("[WorldManager] 玩家进入热源范围，体温开始回升")
+			EventBus.announcement.emit("感受到温暖，体温回升中...")
+		else:
+			print("[WorldManager] 玩家离开热源范围")
+			EventBus.announcement.emit("离开温暖区域，注意体温")
+
+# 获取玩家实体（辅助函数）
+func _get_player_entity() -> EntityData:
+	for entity in entities:
+		if entity.entity_type == "player":
+			return entity
+	return null
+
+
 # world_manager.gd 中的核心逻辑更新
 func tick_step() -> void:
 	current_tick += 1
 
 	for entity in entities:
-		if not is_instance_valid(entity): continue
+		if not is_instance_valid(entity):
+			continue
 
 		# 1. 基础演化 (变老)
 		entity.age_step(1)
 
-		# 2. 简单的 AI 决策：机械体捕食逻辑
+		# 2. 代谢系统处理
+		_handle_metabolism(entity)
+
+		# 3. 简单的 AI 决策：机械体捕食逻辑
 		if entity.entity_type == "mechanical":
 			_handle_mechanical_ai(entity)
 
 	world_ticked.emit(current_tick)
+
+	# 更新玩家与静态实体的邻近效果
+	var player_entity: EntityData = _get_player_entity()
+	if player_entity != null:
+		_update_proximity_effects(player_entity)
+
+# --- 律法时钟系统 ---
+
+
+# 世界时钟步进函数
+func _step_world_clock(delta: float) -> void:
+	# 累加世界时间
+	world_time += delta
+
+	# 检查是否到达新的一天
+	if world_time >= day_length_seconds:
+		world_time = 0.0
+		CalendarManager.advance_day()
+
+	# 计算时间比例并更新昼夜状态
+	var time_ratio: float = world_time / day_length_seconds
+	CalendarManager.update_time_phase(time_ratio)
+
+
+# --- 代谢系统 ---
+
+
+# 代谢解算器：处理能量消耗和禁忌惩罚
+func _handle_metabolism(entity: EntityData) -> void:
+	# 跳过静态障碍物
+	if entity.entity_type == "static":
+		return
+
+	# 计算真实位移速度（基于前后帧位置差）
+	var velocity: Vector2 = _calculate_entity_velocity(entity)
+
+	# 基础代谢速率（每秒消耗）
+	var base_metabolic_rate: float = 0.05
+
+	# 环境压迫：夜晚代谢加速
+	if CalendarManager.is_night:
+		base_metabolic_rate *= 1.5
+
+	# 禁忌惩罚：忌出行时的移动惩罚
+	var movement_multiplier: float = 1.0
+	if CalendarManager.current_taboo == CalendarManager.Taboo.AVOID_TRAVEL:
+		if velocity.length() > 0.1:  # 如果实体正在移动
+			movement_multiplier = 5.0  # 移动时能量消耗x5
+
+	# 计算总能量消耗
+	var energy_consumption: float = base_metabolic_rate * movement_multiplier
+
+	# 应用能量消耗
+	entity.energy = max(0.0, entity.energy - energy_consumption)
+
+	# 空腹惩罚：能量耗尽时扣除生命值
+	if entity.energy <= 0.0:
+		entity.health -= 0.1  # 每秒扣除0.1生命值
+		entity.health = max(0.0, entity.health)
+
+	# 体温系统处理
+	_handle_temperature(entity)
+
+	# 玩家状态同步（仅对玩家实体）
+	if entity.entity_type == "player":
+		EventBus.player_stat_updated.emit("energy", entity.energy)
+		EventBus.player_stat_updated.emit("health", entity.health)
+		EventBus.player_stat_updated.emit("temperature", entity.temperature)
+
+# 计算实体速度（通过前后帧位置差）
+func _calculate_entity_velocity(entity: EntityData) -> Vector2:
+	# 计算当前位置与上一帧位置的差值
+	var displacement: Vector2 = entity.position - entity.last_position
+
+	# 更新上一帧位置（为下一帧计算做准备）
+	entity.last_position = entity.position
+
+	# 返回位移向量（每秒位移量）
+	return displacement * ticks_per_second
+
+# 体温系统：处理环境温度影响
+func _handle_temperature(entity: EntityData) -> void:
+	# 跳过静态障碍物
+	if entity.entity_type == "static":
+		return
+
+	# 体温变化速率（每秒）
+	var temperature_change: float = 0.0
+
+	# 环境影响：夜晚失温
+	if CalendarManager.is_night and not entity.is_near_heat_source:
+		temperature_change = -0.5  # 每秒下降0.5度
+
+	# 热源恢复：靠近热源时回温
+	if entity.is_near_heat_source:
+		temperature_change = 1.0  # 每秒回升1.0度
+
+	# 应用体温变化
+	entity.temperature += temperature_change / ticks_per_second
+
+	# 体温限制：正常体温范围
+	entity.temperature = clamp(entity.temperature, 20.0, 36.5)
+
+	# 失温惩罚：体温过低时扣除生命值
+	if entity.temperature < 30.0:
+		var hypothermia_damage: float = (30.0 - entity.temperature) * 0.05
+		entity.health -= hypothermia_damage
+		entity.health = max(0.0, entity.health)
+
 
 # 针对 MX110 优化的数组查找逻辑
 # world_manager.gd 中的修正版函数
 func _handle_mechanical_ai(hunter: EntityData) -> void:
 	# 1. 寻找最近的猎物（玩家优先级）
 	var nearest_prey: EntityData = null
-	var min_dist = 400.0 # 感知范围
+	var min_dist = 400.0  # 感知范围
 
 	for target in entities:
 		# 跳过无效目标
@@ -63,8 +260,8 @@ func _handle_mechanical_ai(hunter: EntityData) -> void:
 			continue
 
 		# 判断目标类型
-		var is_player: bool = (target.entity_type == "player")
-		var is_organic: bool = (target.entity_type == "organic")
+		var is_player: bool = target.entity_type == "player"
+		var is_organic: bool = target.entity_type == "organic"
 
 		# 玩家优先级逻辑
 		if is_player:
@@ -91,12 +288,13 @@ func _handle_mechanical_ai(hunter: EntityData) -> void:
 		# --- 核心改进：伤害逻辑 ---
 		# 只有足够近（小于 10 像素）才吸血
 		if min_dist < 10.0:
-			nearest_prey.health -= 5.0 # 有机体扣血
-			hunter.health = min(100.0, hunter.health + 2.0) # 机械体回血
+			nearest_prey.health -= 5.0  # 有机体扣血
+			hunter.health = min(100.0, hunter.health + 2.0)  # 机械体回血
 
 	# 【重要修复】无论有没有猎物，都得守法（不穿墙、不撞墙）
 	hunter.position = clamp_position(hunter.position)
 	resolve_collisions(hunter)
+
 
 # --- 实体管理 ---
 func register_entity(data: EntityData) -> void:
@@ -104,12 +302,15 @@ func register_entity(data: EntityData) -> void:
 		entities.append(data)
 		print("实体已注册: ", data.id)
 
+
 func unregister_entity(data: EntityData) -> void:
 	if data != null and entities.has(data):
 		entities.erase(data)
 		print("实体已注销: ", data.id)
 
+
 # --- 持久化逻辑 ---
+
 
 func save_world(slot_name: String) -> void:
 	# 创建临时资源容器
@@ -135,6 +336,7 @@ func save_world(slot_name: String) -> void:
 	else:
 		push_error("保存失败，错误码: " + str(error))
 
+
 func load_world(slot_name: String) -> void:
 	# 构建加载路径
 	var load_path: String = "user://saves/" + slot_name + ".res"
@@ -146,7 +348,8 @@ func load_world(slot_name: String) -> void:
 
 	# 加载资源文件
 	var world_data: WorldSaveData = ResourceLoader.load(
-		load_path, "", ResourceLoader.CACHE_MODE_IGNORE)
+		load_path, "", ResourceLoader.CACHE_MODE_IGNORE
+	)
 
 	if world_data != null:
 		# 恢复世界状态
@@ -162,6 +365,7 @@ func load_world(slot_name: String) -> void:
 		world_loaded.emit()
 	else:
 		push_error("加载失败: " + load_path)
+
 
 # 碰撞检测与解决函数
 func resolve_collisions(subject: EntityData) -> void:
@@ -182,7 +386,9 @@ func resolve_collisions(subject: EntityData) -> void:
 			# 如果发生碰撞
 			if d < min_dist and d > 0.0:
 				# 计算挤开向量
-				var push: Vector2 = (subject.position - entity.position).normalized() * (min_dist - d)
+				var push: Vector2 = (
+					(subject.position - entity.position).normalized() * (min_dist - d)
+				)
 
 				# 应用排斥力
 				subject.position += push
@@ -190,10 +396,12 @@ func resolve_collisions(subject: EntityData) -> void:
 				# 约束位置在世界边界内
 				subject.position = clamp_position(subject.position)
 
+
 # 位置限制函数
 func clamp_position(pos: Vector2) -> Vector2:
 	# 返回世界边界限制后的坐标
 	return pos.clamp(world_bounds.position, world_bounds.position + world_bounds.size)
+
 
 # 获取当前世界状态信息
 func get_world_info() -> Dictionary:
@@ -203,6 +411,7 @@ func get_world_info() -> Dictionary:
 		"ticks_per_second": ticks_per_second,
 		"world_bounds": world_bounds
 	}
+
 
 # 清空世界状态（用于重置或测试）
 func clear_world() -> void:

@@ -1,34 +1,206 @@
 # 📂 Project Zero: 全量架构快照 (Full Context)
-> **生成时间:** 2026-04-19 22:20:01
+> **生成时间:** 2026-04-23 11:34:24
 > **基础 Raw 路径:** `https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/`
 
 ## 🌳 完整目录结构
 ```text
 └── ./
     ├── AI_CONTEXT_MAP.md
+    ├── flatten_code.py
+    ├── IDEAS_SCRAPBOOK.md
     ├── project.godot
+    ├── WORLD_DESIGN.md
     └── .vscode/
     └── scenes/
         ├── base_entity_view.tscn
         ├── main.tscn
+        └── ui/
+            ├── debug_hud.tscn
     └── scripts/
         └── core/
             ├── base_entity_view.gd
+            ├── calendar_manager.gd
             ├── camera.gd
             ├── entity_data.gd
             ├── event_bus.gd
             ├── map_generator.gd
             ├── player_controller.gd
+            ├── static_entity_data.gd
             ├── world_manager.gd
             ├── world_save_data.gd
             ├── world_settings.gd
             ├── world_spawner.gd
+        └── ui/
+            ├── debug_hud.gd
+```
+
+---
+
+## 📜 核心设计文档 (Priority Docs)
+AI 协作前请务必先读取此部分的世界观约束。
+
+### 🔗 文件: WORLD_DESIGN.md
+- **Raw 链接:** [WORLD_DESIGN.md](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/WORLD_DESIGN.md)
+```markdown
+# 零号协议 (Project Zero) - 世界观与核心规则宪法 (V1.0)
+
+**最后更新**: 2026-04-21 22:15
+**核心哲学**: 以数代形 (MX110 优化), 逻辑渲染分离, 电子民俗生存。
+
+## 一、 核心支柱
+
+1. **时空律法 (Chronos-Spatial Laws)**: 世界由“禁忌”统治。每一天、每一块土地都有其特定的物理/逻辑修正。
+2. **电子民俗 (Cyber-Folkloric)**: 将中式黄历（宜/忌）、纸扎美学与机械末日结合。
+3. **动态生态链 (Dynamic Ecosystem)**: 机械体(Mechanoids)与有机体(Organics)存在真实的资源竞争、领地扩张与种群兴衰。
+
+## 二、 律法系统
+
+- **黄历禁忌 (The Almanac)**: 全局随机。影响代谢速率、仇恨距离、采集收益。
+- **生物群落律法 (Biome Laws)**: 区域固定。
+  - _机械荒原_: 忌金属（穿戴金属受损）。
+  - _猩红湿地_: 宜斋戒（肉食降理智）。
+
+## 三、 世代与演化
+
+- 死亡不重置世界。前世遗骸会转化为后世的资源、防御塔或“数据鬼魂”。
+- 生态系统会根据统治度 (Dominance) 自主进行网格同化。
+
+```
+
+---
+
+### 🔗 文件: IDEAS_SCRAPBOOK.md
+- **Raw 链接:** [IDEAS_SCRAPBOOK.md](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/IDEAS_SCRAPBOOK.md)
+```markdown
+# 零号协议：灵感剪贴簿 (Scrapbook)
+
+## [2026-04-21 22:10] - 碎片化灵感录入
+
+- **生态演化**: 网格统治度模型。机械化(Grey) vs 血肉化(Crimson)。
+- **中西民俗**: 耶稣/圣餐仪式作为“逻辑清洗协议”？黄历宜忌作为“代码执行补丁”？
+- **地图边界**: 采用“虚空噪声”效果，而非空气墙。进入边界产生代码报错式的掉血。
+- **食物链**: 机械体收割有机生物作为“生物电池”；有机体通过氧化反应寄生并分解机械。
+- **可持续性**: 装备材质系统。为了去特定区域，玩家必须放弃强力金属装，换上草编或陶瓷装。
+
 ```
 
 ---
 
 ## 📄 全量代码与配置索引
-以下内容包含所有脚本和配置的完整代码，供 AI 建立深层逻辑关联。
+### 🔗 文件: flatten_code.py
+- **Raw 链接:** [flatten_code.py](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/flatten_code.py)
+```python
+import os
+import datetime
+
+# --- 核心配置 (保持原版命名) ---
+REPO_BASE_URL = "https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/"
+OUTPUT_FILE = "AI_CONTEXT_MAP.md"
+
+# 优先级文档：这些文件将出现在生成的 MD 最顶端
+PRIORITY_DOCS = ["WORLD_DESIGN.md", "IDEAS_SCRAPBOOK.md", "AI_CONTEXT_MAP.md"]
+
+# 定义需要包含的文件后缀
+INCLUDE_EXTS = [
+    '.gd',    # GDScript 逻辑
+    '.tscn',  # 场景结构
+    '.godot', # 项目配置
+    '.md',    # 文档说明
+    '.cfg',   # 配置文件
+    '.py'     # 脚本工具
+]
+
+# 定义排除的目录
+EXCLUDE_DIRS = {
+    '.git',
+    '.godot',
+    '.history',
+    'assets',
+    'addons',
+    'export'
+}
+
+def get_dir_tree(startpath):
+    """生成可视化的目录树结构 (保持原版逻辑)"""
+    tree = []
+    for root, dirs, files in os.walk(startpath):
+        dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]
+        level = root.replace(startpath, '').count(os.sep)
+        indent = ' ' * 4 * level
+        tree.append(f"{indent}└── {os.path.basename(root) or startpath}/")
+        sub_indent = ' ' * 4 * (level + 1)
+        for f in files:
+            if any(f.endswith(ext) for ext in INCLUDE_EXTS):
+                tree.append(f"{sub_indent}├── {f}")
+    return "\n".join(tree)
+
+def write_file_content(f, root, filename):
+    """内部工具函数：统一写入文件内容块"""
+    file_path = os.path.relpath(os.path.join(root, filename), ".")
+    url_path = file_path.replace(os.sep, "/")
+    raw_link = f"{REPO_BASE_URL}{url_path}"
+
+    f.write(f"### 🔗 文件: {file_path}\n")
+    f.write(f"- **Raw 链接:** [{url_path}]({raw_link})\n")
+
+    # 确定语法高亮类型
+    lang = "gdscript"
+    if filename.endswith(".tscn") or filename.endswith(".godot"):
+        lang = "toml"
+    elif filename.endswith(".md"):
+        lang = "markdown"
+    elif filename.endswith(".py"):
+        lang = "python"
+
+    f.write(f"```{lang}\n")
+    try:
+        with open(os.path.join(root, filename), "r", encoding="utf-8", errors="ignore") as src:
+            f.write(src.read())
+    except Exception as e:
+        f.write(f"读取失败: {str(e)}")
+    f.write("\n```\n\n---\n\n")
+
+def generate_map():
+    print("🚀 正在生成全量项目逻辑地图 (含世界观置顶)...")
+
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        # 1. 写入元数据
+        f.write("# 📂 Project Zero: 全量架构快照 (Full Context)\n")
+        f.write(f"> **生成时间:** {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"> **基础 Raw 路径:** `{REPO_BASE_URL}`\n\n")
+
+        # 2. 写入目录树
+        f.write("## 🌳 完整目录结构\n")
+        f.write("```text\n")
+        f.write(get_dir_tree("."))
+        f.write("\n```\n\n---\n\n")
+
+        # 3. 优先处理设计文档 (这是本次的核心改动)
+        f.write("## 📜 核心设计文档 (Priority Docs)\n")
+        f.write("AI 协作前请务必先读取此部分的世界观约束。\n\n")
+        for doc in PRIORITY_DOCS:
+            if os.path.exists(doc) and doc != OUTPUT_FILE:
+                write_file_content(f, ".", doc)
+
+        # 4. 遍历写入其余代码文件
+        f.write("## 📄 全量代码与配置索引\n")
+        for root, dirs, files in os.walk("."):
+            dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]
+            for filename in files:
+                # 排除已经置顶处理的文件和输出文件本身
+                if any(filename.endswith(ext) for ext in INCLUDE_EXTS):
+                    if filename in PRIORITY_DOCS or filename == OUTPUT_FILE:
+                        continue
+                    write_file_content(f, root, filename)
+
+    print(f"✅ 成功！全量地图已保存至: {OUTPUT_FILE}")
+    print(f"💡 建议：git add . && git commit -m 'SYNC: 更新世界观与逻辑地图' && git push")
+
+if __name__ == "__main__":
+    generate_map()
+```
+
+---
 
 ### 🔗 文件: project.godot
 - **Raw 链接:** [project.godot](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/project.godot)
@@ -54,6 +226,7 @@ config/icon="res://icon.svg"
 
 WorldManager="*res://scripts/core/world_manager.gd"
 EventBus="*res://scripts/core/event_bus.gd"
+CalendarManager="*res://scripts/core/calendar_manager.gd"
 
 [rendering]
 
@@ -125,7 +298,7 @@ show_percentage = false
 ### 🔗 文件: scenes\main.tscn
 - **Raw 链接:** [scenes/main.tscn](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/scenes/main.tscn)
 ```toml
-[gd_scene load_steps=12 format=4 uid="uid://c3pno5hr8r6jo"]
+[gd_scene load_steps=13 format=4 uid="uid://c3pno5hr8r6jo"]
 
 [ext_resource type="Texture2D" uid="uid://b13nwsa6xoxb" path="res://assets/Terrain/Tileset/Tilemap_color1.png" id="1_1fjc7"]
 [ext_resource type="Script" path="res://scripts/core/world_spawner.gd" id="1_p6nn4"]
@@ -135,6 +308,7 @@ show_percentage = false
 [ext_resource type="Script" path="res://scripts/core/camera.gd" id="4_ocl17"]
 [ext_resource type="Script" path="res://scripts/core/entity_data.gd" id="4_q3diw"]
 [ext_resource type="Script" path="res://scripts/core/world_settings.gd" id="5_qn0tx"]
+[ext_resource type="PackedScene" path="res://scenes/ui/debug_hud.tscn" id="6_debug"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_63wuf"]
 texture = ExtResource("1_1fjc7")
@@ -198,7 +372,11 @@ position = Vector2(0, 0)
 age_ticks = 0
 move_speed = 150.0
 energy = 100.0
+max_energy = 100.0
 collision_radius = 20.0
+last_position = Vector2(0, 0)
+temperature = 36.5
+is_near_heat_source = false
 
 [node name="Main" type="Node2D"]
 
@@ -238,6 +416,77 @@ target_node = NodePath("../Entities/Player")
 
 [node name="UI" type="CanvasLayer" parent="."]
 
+[node name="DebugHUD" parent="." instance=ExtResource("6_debug")]
+
+```
+
+---
+
+### 🔗 文件: scenes\ui\debug_hud.tscn
+- **Raw 链接:** [scenes/ui/debug_hud.tscn](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/scenes/ui/debug_hud.tscn)
+```toml
+[gd_scene load_steps=3 format=4 uid="uid://debug_hud_tscn"]
+
+[ext_resource type="Script" path="res://scripts/ui/debug_hud.gd" id="1_debug"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0, 0, 0, 0.7)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 0
+corner_radius_bottom_left = 0
+
+[node name="DebugHUD" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_debug")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+anchors_preset = 0
+anchor_top = 0.0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 10.0
+margin_top = 10.0
+margin_right = -10.0
+margin_bottom = -10.0
+
+[node name="TimeLabel" type="Label" parent="VBoxContainer"]
+text = "时间: 第1天 - 00:00"
+label_settings = null
+
+[node name="TabooLabel" type="Label" parent="VBoxContainer"]
+text = "今日禁忌: 无禁忌"
+label_settings = null
+
+[node name="HealthLabel" type="Label" parent="VBoxContainer"]
+text = "生命: 100.0"
+label_settings = null
+
+[node name="EnergyLabel" type="Label" parent="VBoxContainer"]
+text = "能量: 100.0"
+label_settings = null
+
+[node name="TempLabel" type="Label" parent="VBoxContainer"]
+text = "体温: 36.5°C"
+label_settings = null
+
+[node name="AnnouncementLabel" type="Label" parent="VBoxContainer"]
+text = ""
+label_settings = null
+self_modulate = Color(1, 0.8, 0.2, 0.9)
+
+[node name="Panel" type="Panel" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 5)
+
+[node name="PanelContainer" type="PanelContainer" parent="VBoxContainer"]
+anchors_preset = 0
+anchor_top = 0.0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+custom_minimum_size = Vector2(300, 0)
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
 ```
 
 ---
@@ -632,6 +881,127 @@ func _play_knockback_anim(attacker_pos: Vector2) -> void:
 
 ---
 
+### 🔗 文件: scripts\core\calendar_manager.gd
+- **Raw 链接:** [scripts/core/calendar_manager.gd](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/scripts/core/calendar_manager.gd)
+```gdscript
+# res://scripts/core/calendar_manager.gd
+# 律法时钟管理器 - 零号协议 V0.2 核心组件
+extends Node
+
+## 律法时钟中枢
+## 作用：管理世界时间、禁忌历法、昼夜交替，为硬核生存系统提供数学基础
+
+# --- 禁忌枚举定义 ---
+enum Taboo {
+	NONE = 0,           # 无禁忌
+	AVOID_TRAVEL = 1,   # 忌出行
+	AVOID_KILLING = 2,  # 忌杀生
+	SUIT_DIGGING = 3    # 宜挖掘
+}
+
+# --- 运行时状态 ---
+var day_count: int = 1              # 当前天数
+var current_taboo: Taboo = Taboo.NONE  # 当前禁忌
+var is_night: bool = false          # 是否为夜晚
+
+# --- 初始化 ---
+func _ready() -> void:
+	# 初始化随机种子
+	randomize()
+
+	# 生成初始禁忌
+	advance_day()
+
+	print("[CalendarManager] 律法时钟初始化完成")
+	print("[CalendarManager] 初始天数: ", day_count, " | 初始禁忌: ", _get_taboo_name(current_taboo))
+
+# --- 核心逻辑 ---
+
+# 推进一天，生成新的禁忌
+func advance_day() -> void:
+	# 递增天数
+	day_count += 1
+
+	# 随机生成新禁忌
+	var new_taboo: Taboo = Taboo.values()[randi() % Taboo.size()]
+	current_taboo = new_taboo
+
+	# 通过EventBus广播禁忌变更
+	EventBus.taboo_changed.emit(current_taboo)
+
+	# 发送全局公告
+	var announcement_text: String = "第" + str(day_count) + "天 - " + _get_taboo_name(current_taboo)
+	EventBus.announcement.emit(announcement_text)
+
+	print("[CalendarManager] 新的一天开始: ", announcement_text)
+
+# 更新昼夜状态
+func update_time_phase(time_ratio: float) -> void:
+	# 时间比例范围: 0.0-1.0 (0.0=日出, 0.5=正午, 1.0=次日日出)
+	# 夜晚判定: 0.75-1.0 和 0.0-0.25 为夜晚
+	var new_is_night: bool = (time_ratio > 0.75 or time_ratio < 0.25)
+
+	# 如果昼夜状态发生变化
+	if new_is_night != is_night:
+		is_night = new_is_night
+
+		# 通过EventBus广播昼夜变更
+		EventBus.time_phase_changed.emit(is_night)
+
+		# 发送昼夜变更公告
+		var phase_name: String = "夜晚" if is_night else "白天"
+		EventBus.announcement.emit("进入" + phase_name)
+
+		print("[CalendarManager] 昼夜变更: ", phase_name)
+
+# --- 辅助函数 ---
+
+# 获取禁忌名称
+func _get_taboo_name(taboo: Taboo) -> String:
+	match taboo:
+		Taboo.NONE:
+			return "无禁忌"
+		Taboo.AVOID_TRAVEL:
+			return "忌出行"
+		Taboo.AVOID_KILLING:
+			return "忌杀生"
+		Taboo.SUIT_DIGGING:
+			return "宜挖掘"
+		_:
+			return "未知禁忌"
+
+# 获取当前禁忌效果描述
+func get_current_taboo_effects() -> Dictionary:
+	match current_taboo:
+		Taboo.AVOID_TRAVEL:
+			return {"移动速度惩罚": 0.7, "说明": "今日不宜远行"}
+		Taboo.AVOID_KILLING:
+			return {"攻击伤害惩罚": 0.5, "说明": "今日忌杀生"}
+		Taboo.SUIT_DIGGING:
+			return {"采集效率加成": 1.5, "说明": "今日宜挖掘"}
+		Taboo.NONE:
+			return {"无效果": 1.0, "说明": "今日诸事皆宜"}
+		_:
+			return {}
+
+# 获取当前时间信息
+func get_time_info() -> Dictionary:
+	return {
+		"day_count": day_count,
+		"current_taboo": current_taboo,
+		"taboo_name": _get_taboo_name(current_taboo),
+		"is_night": is_night,
+		"time_phase": "夜晚" if is_night else "白天"
+	}
+
+# 调试信息输出
+func print_debug_info() -> void:
+	var info: Dictionary = get_time_info()
+	print("[CalendarManager] 调试信息: ", info)
+```
+
+---
+
 ### 🔗 文件: scripts\core\camera.gd
 - **Raw 链接:** [scripts/core/camera.gd](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/scripts/core/camera.gd)
 ```gdscript
@@ -712,8 +1082,14 @@ extends Resource
 
 # --- 新增：生存与博弈属性 ---
 @export var move_speed: float = 50.0  # 移动速度
-@export var energy: float = 100.0     # 能量值
+@export var energy: float = 100.0     # 饥饿/能量
+@export var max_energy: float = 100.0 # 最大能量值
 @export var collision_radius: float = 20.0  # 碰撞半径
+
+# --- 新增：速度检测与体温系统 ---
+@export var last_position: Vector2 = Vector2.ZERO # 用于计算真实位移
+@export var temperature: float = 36.5              # 当前体温
+@export var is_near_heat_source: bool = false      # 是否靠近热源（由 WorldManager 判定）
 
 func age_step(ticks: int) -> void:
 	age_ticks += ticks
@@ -744,8 +1120,19 @@ extends Node
 ## 全局信号中枢
 ## 作用：解耦战斗逻辑与视觉反馈
 
-# 信号：目标数据，伤害值，攻击者位置
+# 战斗信号：目标数据，伤害值，攻击者位置
 signal entity_damaged(target_data: EntityData, amount: float, attacker_pos: Vector2)
+
+# 律法时钟信号：用于驱动 UI 与环境反馈
+signal taboo_changed(new_taboo: int)      # 禁忌变更
+signal time_phase_changed(is_night: bool) # 昼夜更替
+signal announcement(text: String)         # 全局文字播报
+
+# 状态同步信号：用于 UI 刷新
+signal player_stat_updated(key: String, value: Variant)  # 玩家状态更新
+
+# 静态实体信号：用于视觉层生成
+signal static_entity_spawned(static_data: StaticEntityData)  # 静态实体生成
 ```
 
 ---
@@ -1093,6 +1480,64 @@ func get_move_speed() -> float:
 
 ---
 
+### 🔗 文件: scripts\core\static_entity_data.gd
+- **Raw 链接:** [scripts/core/static_entity_data.gd](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/scripts/core/static_entity_data.gd)
+```gdscript
+# res://scripts/core/static_entity_data.gd
+class_name StaticEntityData
+extends Resource
+
+## 静态实体数据模型
+## 作用：定义不可移动的资源/设施数据，如热源、祭坛、资源点等
+
+# --- 基础属性 ---
+@export var id: String = ""                    # 实体唯一标识
+@export var position: Vector2 = Vector2.ZERO    # 世界坐标位置
+@export var type: String = "heat_source"        # 实体类型：热源、资源、祭坛等
+@export var effect_radius: float = 100.0        # 作用半径
+
+# --- 类型特定属性 ---
+@export var heat_strength: float = 1.0          # 热源强度（仅热源类型）
+@export var resource_type: String = "wood"      # 资源类型（仅资源类型）
+@export var resource_amount: int = 100          # 资源数量（仅资源类型）
+
+# --- 初始化函数 ---
+func _init() -> void:
+	# 自动生成ID（如果未设置）
+	if id.is_empty():
+		id = "static_" + str(randi() % 10000)
+
+# --- 辅助函数 ---
+
+# 获取实体类型描述
+func get_type_description() -> String:
+	match type:
+		"heat_source":
+			return "热源（温暖区域）"
+		"resource":
+			return "资源点（" + resource_type + "）"
+		"altar":
+			return "祭坛（神秘力量）"
+		_:
+			return "未知类型"
+
+# 检查位置是否在作用范围内
+func is_position_in_range(check_pos: Vector2) -> bool:
+	return position.distance_to(check_pos) <= effect_radius
+
+# 获取调试信息
+func get_debug_info() -> Dictionary:
+	return {
+		"id": id,
+		"type": type,
+		"position": position,
+		"radius": effect_radius,
+		"description": get_type_description()
+	}
+```
+
+---
+
 ### 🔗 文件: scripts\core\world_manager.gd
 - **Raw 链接:** [scripts/core/world_manager.gd](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/scripts/core/world_manager.gd)
 ```gdscript
@@ -1105,17 +1550,33 @@ extends Node
 
 # --- 信号 ---
 signal world_ticked(tick_count: int)
-signal world_loaded()  # 世界加载完成信号
+signal world_loaded  # 世界加载完成信号
 
 # --- 配置 ---
 @export_group("Simulation")
 @export var ticks_per_second: float = 10.0
 @export var world_bounds: Rect2 = Rect2(-600, -400, 1200, 800)  # 世界边界矩形
 
+# --- 律法时钟配置 ---
+@export_group("Time System")
+@export var day_length_seconds: float = 600.0  # 10分钟一个昼夜周期
+
 # --- 运行时数据 ---
 var entities: Array[EntityData] = []
+var static_entities: Array[StaticEntityData] = []  # 静态实体数组
 var current_tick: int = 0
 var accumulator: float = 0.0
+var world_time: float = 0.0  # 世界时间（秒）
+
+# --- 初始化 ---
+func _ready() -> void:
+	# 生成静态实体
+	_generate_static_entities()
+
+	print("WorldManager 初始化完成")
+	print("固定Tick频率: ", ticks_per_second, " Hz")
+	print("世界边界: ", world_bounds)
+	print("静态实体数量: ", static_entities.size())
 
 # --- 核心逻辑 ---
 
@@ -1128,28 +1589,209 @@ func _process(delta: float) -> void:
 		accumulator -= tick_interval
 		tick_step()
 
+	# 律法时钟步进（基于真实时间，不受固定tick影响）
+	_step_world_clock(delta)
+
+# --- 静态实体系统 ---
+
+# 生成静态实体（热源、资源点等）
+func _generate_static_entities() -> void:
+	# 清空现有静态实体
+	static_entities.clear()
+
+	# 随机生成3-5个热源
+	var heat_source_count: int = randi() % 3 + 3  # 3-5个
+
+	for i in range(heat_source_count):
+		var heat_source: StaticEntityData = StaticEntityData.new()
+		heat_source.type = "heat_source"
+		heat_source.position = _get_random_position_within_bounds()
+		heat_source.effect_radius = randf_range(80.0, 120.0)  # 随机半径80-120
+		heat_source.heat_strength = randf_range(0.8, 1.2)     # 随机强度0.8-1.2
+
+		static_entities.append(heat_source)
+
+		# 发送信号通知View层生成视觉表现
+		EventBus.static_entity_spawned.emit(heat_source)
+
+		print("[WorldManager] 生成热源: ", heat_source.get_debug_info())
+
+	print("[WorldManager] 静态实体生成完成，共生成 ", heat_source_count, " 个热源")
+
+# 获取世界边界内的随机位置
+func _get_random_position_within_bounds() -> Vector2:
+	var x: float = randf_range(world_bounds.position.x + 50, world_bounds.position.x + world_bounds.size.x - 50)
+	var y: float = randf_range(world_bounds.position.y + 50, world_bounds.position.y + world_bounds.size.y - 50)
+	return Vector2(x, y)
+
+# 更新玩家与静态实体的邻近效果
+func _update_proximity_effects(player_data: EntityData) -> void:
+	# 热源检测
+	var found_heat: bool = false
+
+	for static_ent in static_entities:
+		if static_ent.type == "heat_source":
+			var dist: float = player_data.position.distance_to(static_ent.position)
+			if dist < static_ent.effect_radius:
+				found_heat = true
+				break
+
+	# 更新玩家热源状态
+	var was_near_heat: bool = player_data.is_near_heat_source
+	player_data.is_near_heat_source = found_heat
+
+	# 状态变更反馈
+	if was_near_heat != found_heat:
+		if found_heat:
+			print("[WorldManager] 玩家进入热源范围，体温开始回升")
+			EventBus.announcement.emit("感受到温暖，体温回升中...")
+		else:
+			print("[WorldManager] 玩家离开热源范围")
+			EventBus.announcement.emit("离开温暖区域，注意体温")
+
+# 获取玩家实体（辅助函数）
+func _get_player_entity() -> EntityData:
+	for entity in entities:
+		if entity.entity_type == "player":
+			return entity
+	return null
+
+
 # world_manager.gd 中的核心逻辑更新
 func tick_step() -> void:
 	current_tick += 1
 
 	for entity in entities:
-		if not is_instance_valid(entity): continue
+		if not is_instance_valid(entity):
+			continue
 
 		# 1. 基础演化 (变老)
 		entity.age_step(1)
 
-		# 2. 简单的 AI 决策：机械体捕食逻辑
+		# 2. 代谢系统处理
+		_handle_metabolism(entity)
+
+		# 3. 简单的 AI 决策：机械体捕食逻辑
 		if entity.entity_type == "mechanical":
 			_handle_mechanical_ai(entity)
 
 	world_ticked.emit(current_tick)
+
+	# 更新玩家与静态实体的邻近效果
+	var player_entity: EntityData = _get_player_entity()
+	if player_entity != null:
+		_update_proximity_effects(player_entity)
+
+# --- 律法时钟系统 ---
+
+
+# 世界时钟步进函数
+func _step_world_clock(delta: float) -> void:
+	# 累加世界时间
+	world_time += delta
+
+	# 检查是否到达新的一天
+	if world_time >= day_length_seconds:
+		world_time = 0.0
+		CalendarManager.advance_day()
+
+	# 计算时间比例并更新昼夜状态
+	var time_ratio: float = world_time / day_length_seconds
+	CalendarManager.update_time_phase(time_ratio)
+
+
+# --- 代谢系统 ---
+
+
+# 代谢解算器：处理能量消耗和禁忌惩罚
+func _handle_metabolism(entity: EntityData) -> void:
+	# 跳过静态障碍物
+	if entity.entity_type == "static":
+		return
+
+	# 计算真实位移速度（基于前后帧位置差）
+	var velocity: Vector2 = _calculate_entity_velocity(entity)
+
+	# 基础代谢速率（每秒消耗）
+	var base_metabolic_rate: float = 0.05
+
+	# 环境压迫：夜晚代谢加速
+	if CalendarManager.is_night:
+		base_metabolic_rate *= 1.5
+
+	# 禁忌惩罚：忌出行时的移动惩罚
+	var movement_multiplier: float = 1.0
+	if CalendarManager.current_taboo == CalendarManager.Taboo.AVOID_TRAVEL:
+		if velocity.length() > 0.1:  # 如果实体正在移动
+			movement_multiplier = 5.0  # 移动时能量消耗x5
+
+	# 计算总能量消耗
+	var energy_consumption: float = base_metabolic_rate * movement_multiplier
+
+	# 应用能量消耗
+	entity.energy = max(0.0, entity.energy - energy_consumption)
+
+	# 空腹惩罚：能量耗尽时扣除生命值
+	if entity.energy <= 0.0:
+		entity.health -= 0.1  # 每秒扣除0.1生命值
+		entity.health = max(0.0, entity.health)
+
+	# 体温系统处理
+	_handle_temperature(entity)
+
+	# 玩家状态同步（仅对玩家实体）
+	if entity.entity_type == "player":
+		EventBus.player_stat_updated.emit("energy", entity.energy)
+		EventBus.player_stat_updated.emit("health", entity.health)
+		EventBus.player_stat_updated.emit("temperature", entity.temperature)
+
+# 计算实体速度（通过前后帧位置差）
+func _calculate_entity_velocity(entity: EntityData) -> Vector2:
+	# 计算当前位置与上一帧位置的差值
+	var displacement: Vector2 = entity.position - entity.last_position
+
+	# 更新上一帧位置（为下一帧计算做准备）
+	entity.last_position = entity.position
+
+	# 返回位移向量（每秒位移量）
+	return displacement * ticks_per_second
+
+# 体温系统：处理环境温度影响
+func _handle_temperature(entity: EntityData) -> void:
+	# 跳过静态障碍物
+	if entity.entity_type == "static":
+		return
+
+	# 体温变化速率（每秒）
+	var temperature_change: float = 0.0
+
+	# 环境影响：夜晚失温
+	if CalendarManager.is_night and not entity.is_near_heat_source:
+		temperature_change = -0.5  # 每秒下降0.5度
+
+	# 热源恢复：靠近热源时回温
+	if entity.is_near_heat_source:
+		temperature_change = 1.0  # 每秒回升1.0度
+
+	# 应用体温变化
+	entity.temperature += temperature_change / ticks_per_second
+
+	# 体温限制：正常体温范围
+	entity.temperature = clamp(entity.temperature, 20.0, 36.5)
+
+	# 失温惩罚：体温过低时扣除生命值
+	if entity.temperature < 30.0:
+		var hypothermia_damage: float = (30.0 - entity.temperature) * 0.05
+		entity.health -= hypothermia_damage
+		entity.health = max(0.0, entity.health)
+
 
 # 针对 MX110 优化的数组查找逻辑
 # world_manager.gd 中的修正版函数
 func _handle_mechanical_ai(hunter: EntityData) -> void:
 	# 1. 寻找最近的猎物（玩家优先级）
 	var nearest_prey: EntityData = null
-	var min_dist = 400.0 # 感知范围
+	var min_dist = 400.0  # 感知范围
 
 	for target in entities:
 		# 跳过无效目标
@@ -1161,8 +1803,8 @@ func _handle_mechanical_ai(hunter: EntityData) -> void:
 			continue
 
 		# 判断目标类型
-		var is_player: bool = (target.entity_type == "player")
-		var is_organic: bool = (target.entity_type == "organic")
+		var is_player: bool = target.entity_type == "player"
+		var is_organic: bool = target.entity_type == "organic"
 
 		# 玩家优先级逻辑
 		if is_player:
@@ -1189,12 +1831,13 @@ func _handle_mechanical_ai(hunter: EntityData) -> void:
 		# --- 核心改进：伤害逻辑 ---
 		# 只有足够近（小于 10 像素）才吸血
 		if min_dist < 10.0:
-			nearest_prey.health -= 5.0 # 有机体扣血
-			hunter.health = min(100.0, hunter.health + 2.0) # 机械体回血
+			nearest_prey.health -= 5.0  # 有机体扣血
+			hunter.health = min(100.0, hunter.health + 2.0)  # 机械体回血
 
 	# 【重要修复】无论有没有猎物，都得守法（不穿墙、不撞墙）
 	hunter.position = clamp_position(hunter.position)
 	resolve_collisions(hunter)
+
 
 # --- 实体管理 ---
 func register_entity(data: EntityData) -> void:
@@ -1202,12 +1845,15 @@ func register_entity(data: EntityData) -> void:
 		entities.append(data)
 		print("实体已注册: ", data.id)
 
+
 func unregister_entity(data: EntityData) -> void:
 	if data != null and entities.has(data):
 		entities.erase(data)
 		print("实体已注销: ", data.id)
 
+
 # --- 持久化逻辑 ---
+
 
 func save_world(slot_name: String) -> void:
 	# 创建临时资源容器
@@ -1233,6 +1879,7 @@ func save_world(slot_name: String) -> void:
 	else:
 		push_error("保存失败，错误码: " + str(error))
 
+
 func load_world(slot_name: String) -> void:
 	# 构建加载路径
 	var load_path: String = "user://saves/" + slot_name + ".res"
@@ -1244,7 +1891,8 @@ func load_world(slot_name: String) -> void:
 
 	# 加载资源文件
 	var world_data: WorldSaveData = ResourceLoader.load(
-		load_path, "", ResourceLoader.CACHE_MODE_IGNORE)
+		load_path, "", ResourceLoader.CACHE_MODE_IGNORE
+	)
 
 	if world_data != null:
 		# 恢复世界状态
@@ -1260,6 +1908,7 @@ func load_world(slot_name: String) -> void:
 		world_loaded.emit()
 	else:
 		push_error("加载失败: " + load_path)
+
 
 # 碰撞检测与解决函数
 func resolve_collisions(subject: EntityData) -> void:
@@ -1280,7 +1929,9 @@ func resolve_collisions(subject: EntityData) -> void:
 			# 如果发生碰撞
 			if d < min_dist and d > 0.0:
 				# 计算挤开向量
-				var push: Vector2 = (subject.position - entity.position).normalized() * (min_dist - d)
+				var push: Vector2 = (
+					(subject.position - entity.position).normalized() * (min_dist - d)
+				)
 
 				# 应用排斥力
 				subject.position += push
@@ -1288,10 +1939,12 @@ func resolve_collisions(subject: EntityData) -> void:
 				# 约束位置在世界边界内
 				subject.position = clamp_position(subject.position)
 
+
 # 位置限制函数
 func clamp_position(pos: Vector2) -> Vector2:
 	# 返回世界边界限制后的坐标
 	return pos.clamp(world_bounds.position, world_bounds.position + world_bounds.size)
+
 
 # 获取当前世界状态信息
 func get_world_info() -> Dictionary:
@@ -1301,6 +1954,7 @@ func get_world_info() -> Dictionary:
 		"ticks_per_second": ticks_per_second,
 		"world_bounds": world_bounds
 	}
+
 
 # 清空世界状态（用于重置或测试）
 func clear_world() -> void:
@@ -1559,6 +2213,150 @@ func _get_configuration_warnings() -> PackedStringArray:
 		warnings.append("base_view_scene 未设置，无法生成实体")
 
 	return warnings
+```
+
+---
+
+### 🔗 文件: scripts\ui\debug_hud.gd
+- **Raw 链接:** [scripts/ui/debug_hud.gd](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/scripts/ui/debug_hud.gd)
+```gdscript
+# res://scripts/ui/debug_hud.gd
+extends CanvasLayer
+
+## 调试HUD界面
+## 作用：实时显示玩家生存状态数据，用于开发和调试
+
+# --- 内部状态 ---
+var announcement_timer: float = 0.0
+var current_day: int = 1
+var current_time_ratio: float = 0.0
+
+# --- UI节点引用 ---
+@onready var time_label: Label = $VBoxContainer/TimeLabel
+@onready var taboo_label: Label = $VBoxContainer/TabooLabel
+@onready var health_label: Label = $VBoxContainer/HealthLabel
+@onready var energy_label: Label = $VBoxContainer/EnergyLabel
+@onready var temp_label: Label = $VBoxContainer/TempLabel
+@onready var announcement_label: Label = $VBoxContainer/AnnouncementLabel
+
+# --- 初始化 ---
+func _ready() -> void:
+	# 订阅EventBus信号
+	EventBus.player_stat_updated.connect(_on_stat_updated)
+	EventBus.taboo_changed.connect(_on_taboo_updated)
+	EventBus.time_phase_changed.connect(_on_time_phase_changed)
+	EventBus.announcement.connect(_on_announcement)
+
+	# 初始化UI状态
+	_update_time_display()
+
+	print("[DebugHUD] 调试界面初始化完成")
+
+# --- 每帧更新 ---
+func _process(delta: float) -> void:
+	# 更新公告显示计时器
+	if announcement_timer > 0.0:
+		announcement_timer -= delta
+		if announcement_timer <= 0.0:
+			announcement_label.text = ""
+
+	# 更新时间显示（模拟实时时钟）
+	_update_time_display()
+
+# --- 信号处理函数 ---
+
+# 玩家状态更新
+func _on_stat_updated(key: String, value: float) -> void:
+	match key:
+		"health":
+			health_label.text = "生命: %.1f" % value
+			# 血量低于30%时变红色警告
+			if value < 30.0:
+				health_label.modulate = Color(1.0, 0.3, 0.3)
+			else:
+				health_label.modulate = Color(1.0, 1.0, 1.0)
+
+		"energy":
+			energy_label.text = "能量: %.1f" % value
+			# 能量低于20%时变黄色警告
+			if value < 20.0:
+				energy_label.modulate = Color(1.0, 1.0, 0.3)
+			else:
+				energy_label.modulate = Color(1.0, 1.0, 1.0)
+
+		"temperature":
+			temp_label.text = "体温: %.1f°C" % value
+			# 体温低于30°C时变蓝色警告
+			if value < 30.0:
+				temp_label.modulate = Color(0.3, 0.3, 1.0)
+			else:
+				temp_label.modulate = Color(1.0, 1.0, 1.0)
+
+# 禁忌更新
+func _on_taboo_updated(taboo: int) -> void:
+	var taboo_name: String = _get_taboo_name(taboo)
+	taboo_label.text = "今日禁忌: " + taboo_name
+
+	# 禁忌变更时显示特殊颜色
+	taboo_label.modulate = Color(1.0, 0.8, 0.2)
+
+	# 3秒后恢复原色
+	var timer: SceneTreeTimer = get_tree().create_timer(3.0)
+	timer.timeout.connect(_reset_taboo_color)
+
+# 昼夜变更
+func _on_time_phase_changed(is_night: bool) -> void:
+	# 更新背景颜色表示昼夜
+	if is_night:
+		time_label.modulate = Color(0.7, 0.7, 1.0)  # 夜晚蓝色
+	else:
+		time_label.modulate = Color(1.0, 1.0, 1.0)  # 白天白色
+
+# 公告信息
+func _on_announcement(text: String) -> void:
+	announcement_label.text = text
+	announcement_timer = 5.0  # 显示5秒
+
+# --- 辅助函数 ---
+
+# 更新时间显示
+func _update_time_display() -> void:
+	# 模拟时间显示（实际应该从CalendarManager获取）
+	var minutes: int = int(current_time_ratio * 24 * 60) % (24 * 60)
+	var hours: int = minutes / 60
+	var mins: int = minutes % 60
+
+	time_label.text = "时间: 第%d天 - %02d:%02d" % [current_day, hours, mins]
+
+	# 模拟时间流逝（用于演示）
+	current_time_ratio += 0.0001  # 非常缓慢的时间流逝
+	if current_time_ratio >= 1.0:
+		current_time_ratio = 0.0
+		current_day += 1
+
+# 获取禁忌名称
+func _get_taboo_name(taboo: int) -> String:
+	match taboo:
+		0:
+			return "无禁忌"
+		1:
+			return "忌出行"
+		2:
+			return "忌杀生"
+		3:
+			return "宜挖掘"
+		_:
+			return "未知禁忌"
+
+# 重置禁忌标签颜色
+func _reset_taboo_color() -> void:
+	taboo_label.modulate = Color(1.0, 1.0, 1.0)
+
+# 调试功能：手动更新状态（用于测试）
+func update_debug_info(health: float, energy: float, temp: float) -> void:
+	health_label.text = "生命: %.1f" % health
+	energy_label.text = "能量: %.1f" % energy
+	temp_label.text = "体温: %.1f°C" % temp
 ```
 
 ---
