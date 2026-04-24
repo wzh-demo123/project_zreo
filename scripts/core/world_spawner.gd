@@ -7,10 +7,13 @@ extends Node2D
 
 # 配置变量
 @export var base_view_scene: PackedScene = null  # 基础实体视图场景
-@export var organic_count: int = 20              # 有机体（食物）生成数量
-@export var mechanical_count: int = 3            # 机械体（猎食者）生成数量
-@export var static_obstacle_count: int = 15      # 静态障碍物数量
-@export var spawn_range: Vector2 = Vector2(1000, 1000)  # 生成区域范围
+@export var organic_count: int = 20  # 已废弃，使用 tuning.spawn_organic_count
+@export var mechanical_count: int = 3  # 已废弃，使用 tuning.spawn_mechanical_count
+@export var static_obstacle_count: int = 15  # 已废弃，使用 tuning.spawn_static_obstacle_count
+@export var spawn_range: Vector2 = Vector2(1000, 1000)  # 已废弃，使用 tuning.spawn_range
+
+# --- 平衡参数配置 ---
+@export var tuning: WorldTuning = WorldTuning.new()  # 平衡参数资源
 
 # 内部计数器
 var total_spawned: int = 0
@@ -163,21 +166,21 @@ func respawn_all() -> void:
 # 批量生成所有实体
 func spawn_all() -> void:
 	# 生成有机体（食物）
-	for i in range(organic_count):
+	for i in range(tuning.spawn_organic_count):
 		_create_entity("organic", "food_" + str(i))
 
 	# 生成机械体（猎食者）
-	for i in range(mechanical_count):
+	for i in range(tuning.spawn_mechanical_count):
 		_create_entity("mechanical", "hunter_" + str(i))
 
 	# 生成静态障碍物
-	for i in range(static_obstacle_count):
+	for i in range(tuning.spawn_static_obstacle_count):
 		_create_static_obstacle("obstacle_" + str(i))
 
 	# 打印统计信息
 	print("世界生成完成 - 总计实体: ", total_spawned)
-	print("有机体: ", organic_count, " | 机械体: ", mechanical_count, " | 障碍物: ", static_obstacle_count)
-	print("生成区域: ", spawn_range)
+	print("有机体: ", tuning.spawn_organic_count, " | 机械体: ", tuning.spawn_mechanical_count, " | 障碍物: ", tuning.spawn_static_obstacle_count)
+	print("生成区域: ", tuning.spawn_range)
 
 # 创建单个实体
 func _create_entity(entity_type: String, entity_id: String) -> void:
@@ -215,9 +218,9 @@ func _create_entity(entity_type: String, entity_id: String) -> void:
 func _get_initial_health(entity_type: String) -> float:
 	match entity_type:
 		"organic":
-			return 50.0  # 食物生命值较低
+			return tuning.entity_organic_health
 		"mechanical":
-			return 150.0  # 猎食者生命值较高
+			return tuning.entity_mechanical_health
 		_:
 			return 100.0  # 默认值
 
@@ -248,8 +251,8 @@ func _create_static_obstacle(obstacle_id: String) -> void:
 	obstacle_data.id = obstacle_id
 	obstacle_data.entity_type = "static"
 	obstacle_data.faction = "neutral"
-	obstacle_data.health = 9999.0  # 障碍物不可摧毁
-	obstacle_data.collision_radius = randf_range(30.0, 50.0)  # 随机半径30-50
+	obstacle_data.health = tuning.entity_static_health  # 障碍物不可摧毁
+	obstacle_data.collision_radius = randf_range(tuning.entity_collision_radius_min, tuning.entity_collision_radius_max)
 	obstacle_data.position = _get_random_position()
 
 	# 绑定数据到视图
@@ -267,8 +270,8 @@ func _create_static_obstacle(obstacle_id: String) -> void:
 
 # 获取随机生成位置
 func _get_random_position() -> Vector2:
-	var random_x: float = randf_range(-spawn_range.x / 2, spawn_range.x / 2)
-	var random_y: float = randf_range(-spawn_range.y / 2, spawn_range.y / 2)
+	var random_x: float = randf_range(-tuning.spawn_range.x / 2, tuning.spawn_range.x / 2)
+	var random_y: float = randf_range(-tuning.spawn_range.y / 2, tuning.spawn_range.y / 2)
 
 	# 相对于生成器的位置
 	return global_position + Vector2(random_x, random_y)

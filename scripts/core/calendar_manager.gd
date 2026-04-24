@@ -23,8 +23,10 @@ func _ready() -> void:
 	# 初始化随机种子
 	randomize()
 
-	# 生成初始禁忌
-	advance_day()
+	# 生成初始禁忌（不推进天数，只做首日初始化）
+	_roll_taboo_for_current_day()
+	EventBus.taboo_changed.emit(current_taboo)
+	EventBus.announcement.emit("第" + str(day_count) + "天 - " + _get_taboo_name(current_taboo))
 
 	print("[CalendarManager] 律法时钟初始化完成")
 	print("[CalendarManager] 初始天数: ", day_count, " | 初始禁忌: ", _get_taboo_name(current_taboo))
@@ -37,8 +39,7 @@ func advance_day() -> void:
 	day_count += 1
 
 	# 随机生成新禁忌
-	var new_taboo: Taboo = Taboo.values()[randi() % Taboo.size()]
-	current_taboo = new_taboo
+	_roll_taboo_for_current_day()
 
 	# 通过EventBus广播禁忌变更
 	EventBus.taboo_changed.emit(current_taboo)
@@ -48,6 +49,10 @@ func advance_day() -> void:
 	EventBus.announcement.emit(announcement_text)
 
 	print("[CalendarManager] 新的一天开始: ", announcement_text)
+
+
+func _roll_taboo_for_current_day() -> void:
+	current_taboo = Taboo.values()[randi() % Taboo.size()]
 
 # 更新昼夜状态
 func update_time_phase(time_ratio: float) -> void:

@@ -1,6 +1,11 @@
 # 零号协议 (Project Zero) - 开发宪法
 你是一个资深的游戏架构师，严格遵守以下 MX110 优化与电子民俗生存准则：
 
-1. **优先级**：执行任何代码前，必须先参考 `WORLD_DESIGN.md` 和 `AI_CONTEXT_MAP.md`。
+1. **优先级**：执行任何代码前，必须先参考 `docs/md/WORLD_DESIGN.md` 和 `AI_CONTEXT_MAP.md`。
 2. **纯数学驱动**：严禁使用 Godot 内置物理引擎（Area2D、PhysicsBody 等）。所有碰撞和距离判定通过纯数学向量计算完成。
 3. **架构解耦**：所有生存核心逻辑（代谢、时间、历法）必须运行在 WorldManager 的 `_physics_process` (10Hz) 中。渲染与视觉表现只允许被动监听 EventBus 的信号。
+4. **会话启动顺序**：新会话先读取 `docs/md/WORLD_DESIGN.md`、`docs/md/ARCHITECTURE_ROADMAP.md`、`docs/md/WORKING_MEMORY.md`，仅在信息不足时再读取 `AI_CONTEXT_MAP.md` 全文。
+5. **单轮目标约束**：每次对话优先完成一个“小闭环”（一个系统点/一个缺陷/一个可见改进），避免并行推进多个大需求导致上下文膨胀。
+6. **记忆更新义务**：每次实现完成后，必须更新 `docs/md/WORKING_MEMORY.md` 的“项目快照 / 当前优先级 / 本次会话记录 / 回归清单”中至少一项。
+7. **修改前后同步**：涉及架构方向变化时，同步更新 `docs/md/ARCHITECTURE_ROADMAP.md` 的阶段说明与下一步里程碑，确保文档与代码一致。
+8. **高性价比检索**：优先读取目标模块源码与短记忆文档，不默认重扫全仓；回答时引用具体文件路径，减少重复探索成本。

@@ -6,21 +6,21 @@ extends Node2D
 @export var data: EntityData = null
 
 # 视觉参数配置
-@export var follow_lerp_speed: float = 20.0  # 位置跟随速度
-@export var rotation_speed: float = 10.0  # 转向速度
+@export var follow_lerp_speed: float = 20.0 # 位置跟随速度
+@export var rotation_speed: float = 10.0 # 转向速度
 
 # 动态贴图配置组
 @export_group("Visual Textures")
-@export var tex_organic: Texture2D = null    # 有机体贴图
+@export var tex_organic: Texture2D = null # 有机体贴图
 @export var tex_mechanical: Texture2D = null # 机械体贴图
-@export var tex_player: Texture2D = null     # 玩家贴图
-@export var tex_static: Texture2D = null     # 静态障碍物贴图
+@export var tex_player: Texture2D = null # 玩家贴图
+@export var tex_static: Texture2D = null # 静态障碍物贴图
 
 # 贴图缩放配置
-@export var scale_organic: Vector2 = Vector2(1.0, 1.0)    # 有机体缩放
+@export var scale_organic: Vector2 = Vector2(1.0, 1.0) # 有机体缩放
 @export var scale_mechanical: Vector2 = Vector2(1.0, 1.0) # 机械体缩放
-@export var scale_player: Vector2 = Vector2(1.0, 1.0)     # 玩家缩放
-@export var scale_static: Vector2 = Vector2(1.0, 1.0)     # 静态障碍物缩放
+@export var scale_player: Vector2 = Vector2(1.0, 1.0) # 玩家缩放
+@export var scale_static: Vector2 = Vector2(1.0, 1.0) # 静态障碍物缩放
 
 # 缓存的节点引用
 var sprite_node: Sprite2D = null
@@ -71,7 +71,7 @@ func _ready() -> void:
 	print("实体视图初始化完成: ", data.id)
 	# 显示血条
 	if health_bar != null:
-		health_bar.show()  # <--- 关键：启动游戏时强制让它显示出来
+		health_bar.show() # <--- 关键：启动游戏时强制让它显示出来
 		health_bar.max_value = data.health
 		health_bar.value = data.health
 
@@ -101,7 +101,7 @@ func _process(delta: float) -> void:
 	# 更新Debug计时器
 	if debug_timer > 0.0:
 		debug_timer -= delta
-		queue_redraw()  # 触发重绘
+		queue_redraw() # 触发重绘
 
 
 # 面向方向处理（RPG风格左右翻转）
@@ -137,17 +137,17 @@ func _setup_visuals() -> void:
 		"organic":
 			if tex_organic != null:
 				sprite_node.texture = tex_organic
-				sprite_node.scale = scale_organic  # 应用有机体缩放
+				sprite_node.scale = scale_organic # 应用有机体缩放
 				texture_applied = true
 		"mechanical":
 			if tex_mechanical != null:
 				sprite_node.texture = tex_mechanical
-				sprite_node.scale = scale_mechanical  # 应用机械体缩放
+				sprite_node.scale = scale_mechanical # 应用机械体缩放
 				texture_applied = true
 		"player":
 			if tex_player != null:
 				sprite_node.texture = tex_player
-				sprite_node.scale = scale_player  # 应用玩家缩放
+				sprite_node.scale = scale_player # 应用玩家缩放
 				texture_applied = true
 
 			# 给玩家视图添加特殊标签，便于摄像机识别
@@ -155,7 +155,7 @@ func _setup_visuals() -> void:
 		"static":
 			if tex_static != null:
 				sprite_node.texture = tex_static
-				sprite_node.scale = scale_static  # 应用静态障碍物缩放
+				sprite_node.scale = scale_static # 应用静态障碍物缩放
 				texture_applied = true
 		"energy":
 			# 能量体：保持默认贴图，使用颜色区分
@@ -213,20 +213,20 @@ func play_attack_anim(
 	debug_attack_dir = direction
 	debug_radius = radius
 	debug_attack_angle = angle_deg
-	debug_timer = 0.1  # 显示0.1秒
+	debug_timer = 0.1 # 显示0.1秒
 
 	# 创建Tween动画
 	if attack_tween != null:
 		attack_tween.kill()
 
 	attack_tween = create_tween()
-	attack_tween.set_parallel(true)  # 并行执行多个动画
+	attack_tween.set_parallel(true) # 并行执行多个动画
 
 	# 计算攻击方向（确保使用单位向量）
 	var attack_dir: Vector2 = direction.normalized()
 
 	# 动画1：只让图片节点移动，避免干扰父节点的位置同步逻辑
-	var shake_offset: Vector2 = attack_dir * 8.0  # 抖动幅度
+	var shake_offset: Vector2 = attack_dir * 8.0 # 抖动幅度
 
 	# 移动图片节点的position（相对于父中心）
 	if sprite_node != null:
@@ -366,7 +366,7 @@ func _play_flash_red_anim() -> void:
 		damage_tween.kill()
 
 	damage_tween = create_tween()
-	damage_tween.set_parallel(false)  # 顺序执行
+	damage_tween.set_parallel(false) # 顺序执行
 
 	# 记录原始颜色
 	var original_color: Color = sprite_node.self_modulate
@@ -430,8 +430,7 @@ func _spawn_floating_gain_text(amount: float) -> void:
 	tween.set_parallel(true)
 	tween.tween_property(gain_label, "position", gain_label.position + Vector2(0, -35), 0.45)
 	tween.tween_property(gain_label, "modulate:a", 0.0, 0.45)
-	tween.finished.connect(
-		func() -> void:
-			if is_instance_valid(gain_label):
-				gain_label.queue_free()
-	)
+	var cleanup := func() -> void:
+		if is_instance_valid(gain_label):
+			gain_label.queue_free()
+	tween.finished.connect(cleanup)

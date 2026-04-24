@@ -8,12 +8,15 @@ extends Node
 # 目标实体视图绑定
 @export var target_view: BaseEntityView = null
 
+# --- 平衡参数配置 ---
+@export var tuning: WorldTuning = WorldTuning.new()  # 平衡参数资源
+
 # --- 战斗系统 ---
 @export_group("Combat")
-@export var attack_damage: float = 30.0
-@export var attack_cooldown: float = 0.4
-@export var attack_radius: float = 40.0
-@export var attack_angle: float = 90.0
+@export var attack_damage: float = 30.0  # 已废弃，使用 tuning.combat_player_damage
+@export var attack_cooldown: float = 0.4  # 已废弃，使用 tuning.combat_cooldown
+@export var attack_radius: float = 40.0  # 已废弃，使用 tuning.combat_radius
+@export var attack_angle: float = 90.0  # 已废弃，使用 tuning.combat_angle
 
 # --- 采集系统 ---
 @export_group("Harvest")
@@ -22,6 +25,9 @@ extends Node
 # 内部状态变量
 var last_direction: Vector2 = Vector2.RIGHT  # 最后朝向
 var attack_timer: float = 0.0  # 攻击冷却计时器
+var _prev_save_key_down: bool = false
+var _prev_load_key_down: bool = false
+var _prev_harvest_key_down: bool = false
 
 # --- 初始化 ---
 func _ready() -> void:
@@ -60,7 +66,7 @@ func _on_world_loaded() -> void:
 		print("[PlayerController] 警告：未找到玩家实体视图")
 
 # 外部调用的重绑函数（由Spawner调用）
-func rebind_player(player_data: EntityData) -> void:
+func rebind_player(_player_data: EntityData) -> void:
 	print("[PlayerController] 收到外部重绑请求")
 	_on_world_loaded()  # 直接调用内部重绑逻辑
 
@@ -68,13 +74,16 @@ func rebind_player(player_data: EntityData) -> void:
 # 每帧输入处理
 func _process(delta: float) -> void:
 	# 保存/加载功能（K键保存，L键加载） - 移动到最前，确保即使玩家死亡也能触发
-	if Input.is_physical_key_pressed(KEY_K):
+	var save_key_down: bool = Input.is_physical_key_pressed(KEY_K)
+	var load_key_down: bool = Input.is_physical_key_pressed(KEY_L)
+	if save_key_down and not _prev_save_key_down:
 		print("[System] 正在保存世界状态...")
 		WorldManager.save_world("test_slot")
-
-	if Input.is_physical_key_pressed(KEY_L):
+	if load_key_down and not _prev_load_key_down:
 		print("[System] 正在读取存档...")
 		WorldManager.load_world("test_slot")
+	_prev_save_key_down = save_key_down
+	_prev_load_key_down = load_key_down
 
 	# 安全检查：确保目标视图和数据存在且存活
 	if not _is_target_valid():
@@ -100,8 +109,10 @@ func _process(delta: float) -> void:
 		_handle_attack()
 
 	# 处理采集输入（单次触发，避免长按一帧多次采集）
-	if Input.is_physical_key_pressed(harvest_key) and Input.is_physical_key_just_pressed(harvest_key):
+	var harvest_key_down: bool = Input.is_physical_key_pressed(harvest_key)
+	if harvest_key_down and not _prev_harvest_key_down:
 		_trigger_harvest()
+	_prev_harvest_key_down = harvest_key_down
 
 # 触发采集
 func _trigger_harvest() -> void:
@@ -162,45 +173,22 @@ func _handle_player_movement(direction: Vector2, delta: float) -> void:
 # 攻击处理逻辑
 func _handle_attack() -> void:
 	# 重置冷却计时器
-	attack_timer = attack_cooldown
+	attack_timer = tuning.combat_cooldown
 
 	# 攻击起点改为玩家自身位置
 	var hit_origin: Vector2 = target_view.data.position
 
 	# 触发攻击动画
-	target_view.play_attack_anim(hit_origin, last_direction, attack_radius, attack_angle)
+	target_view.play_attack_anim(hit_origin, last_direction, tuning.combat_radius, tuning.combat_angle)
 
-	# 直接访问全局 Autoload 单例
-	var hit_count: int = 0
-	for entity in WorldManager.entities:
-		# 跳过无效实体
-		if entity == null:
-			continue
-
-		# 跳过玩家自己
-		if entity == target_view.data:
-			continue
-
-		# 跳过已死亡的实体
-		if entity.health <= 0.0:
-			continue
-
-		# 第一关：距离过滤
-		if entity.position.distance_to(hit_origin) > attack_radius:
-			continue
-
-		# 第二关：角度过滤
-		var dir_to_enemy: Vector2 = (entity.position - hit_origin).normalized()
-		var angle_diff: float = rad_to_deg(last_direction.angle_to(dir_to_enemy))
-
-		if abs(angle_diff) > attack_angle / 2.0:
-			continue
-
-		# 通过两关判定，执行伤害
-		entity.health -= attack_damage
-		hit_count += 1
-		EventBus.entity_damaged.emit(entity, attack_damage, hit_origin)
-		print("攻击命中: ", entity.id, " | 伤害: ", attack_damage, " | 剩余生命: ", entity.health)
+	# 战斗结算下沉到WorldManager，Controller只负责输入与触发
+	var hit_count: int = WorldManager.player_attack(
+		target_view.data,
+		last_direction,
+		tuning.combat_radius,
+		tuning.combat_angle,
+		tuning.combat_player_damage
+	)
 
 	# 攻击反馈
 	if hit_count > 0:

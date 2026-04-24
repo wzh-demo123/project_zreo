@@ -6,7 +6,11 @@ REPO_BASE_URL = "https://raw.githubusercontent.com/wzh-demo123/project_zreo/main
 OUTPUT_FILE = "AI_CONTEXT_MAP.md"
 
 # 优先级文档：这些文件将出现在生成的 MD 最顶端
-PRIORITY_DOCS = ["WORLD_DESIGN.md", "IDEAS_SCRAPBOOK.md", "AI_CONTEXT_MAP.md"]
+PRIORITY_DOCS = [
+    "docs/md/WORLD_DESIGN.md",
+    "docs/md/IDEAS_SCRAPBOOK.md",
+    "AI_CONTEXT_MAP.md"
+]
 
 # 定义需要包含的文件后缀
 INCLUDE_EXTS = [

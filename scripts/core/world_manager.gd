@@ -8,6 +8,7 @@ extends Node
 # --- 信号 ---
 signal world_ticked(tick_count: int)
 signal world_loaded  # 世界加载完成信号
+signal world_clock_updated(day_count: int, time_ratio: float, is_night: bool)
 
 # --- 配置 ---
 @export_group("Simulation")
@@ -20,8 +21,18 @@ signal world_loaded  # 世界加载完成信号
 
 # --- 资源系统配置 ---
 @export_group("Resource System")
-@export var harvest_distance: float = 100.0  # 采集距离
-@export var base_harvest_gain: float = 10.0  # 基础采集收益
+@export var harvest_distance: float = 100.0  # 采集距离（已废弃，使用 WorldTuning）
+@export var base_harvest_gain: float = 10.0  # 基础采集收益（已废弃，使用 WorldTuning）
+
+# --- 平衡参数配置 ---
+@export var tuning: WorldTuning = WorldTuning.new()  # 平衡参数资源
+
+# --- 系统实例 ---
+var temperature_system: RefCounted = null
+var metabolism_system: RefCounted = null
+var combat_system: RefCounted = null
+var harvest_system: RefCounted = null
+var ai_system: RefCounted = null
 
 # --- 运行时数据 ---
 var entities: Array[EntityData] = []
@@ -30,8 +41,22 @@ var current_tick: int = 0
 var accumulator: float = 0.0
 var world_time: float = 0.0  # 世界时间（秒）
 
+# --- Debug 统计 ---
+var last_tick_time: float = 0.0
+var tick_time_accumulator: float = 0.0
+var tick_time_samples: int = 0
+var debug_update_interval: float = 1.0  # 每秒更新一次统计
+var debug_timer: float = 0.0
+
 # --- 初始化 ---
 func _ready() -> void:
+	# 初始化系统
+	temperature_system = load("res://scripts/core/systems/temperature_system.gd").new(tuning, CalendarManager)
+	metabolism_system = load("res://scripts/core/systems/metabolism_system.gd").new(tuning, CalendarManager)
+	combat_system = load("res://scripts/core/systems/combat_system.gd").new(tuning, CalendarManager, EventBus)
+	harvest_system = load("res://scripts/core/systems/harvest_system.gd").new(tuning, CalendarManager, EventBus)
+	ai_system = load("res://scripts/core/systems/simple_ai_system.gd").new(tuning, world_bounds, ticks_per_second)
+
 	# 生成静态实体
 	_generate_static_entities()
 
@@ -47,7 +72,7 @@ func _physics_process(delta: float) -> void:
 	_on_logic_tick(delta)
 
 # 废弃旧的_process，所有逻辑迁移到_physics_process
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	# 保留空函数，避免Godot警告
 	pass
 
@@ -59,10 +84,23 @@ func _on_logic_tick(delta: float) -> void:
 
 	while accumulator >= tick_interval:
 		accumulator -= tick_interval
+		var start_time: float = Time.get_ticks_usec()
 		tick_step()
+		var end_time: float = Time.get_ticks_usec()
+		var tick_duration: float = (end_time - start_time) / 1000.0  # 转换为毫秒
+
+		# 统计 tick 耗时
+		tick_time_accumulator += tick_duration
+		tick_time_samples += 1
 
 	# 律法时钟步进（基于真实时间，不受固定tick影响）
 	_step_world_clock(delta)
+
+	# 定期输出 debug 统计
+	debug_timer += delta
+	if debug_timer >= debug_update_interval:
+		debug_timer = 0.0
+		_print_debug_stats()
 
 # --- 静态实体系统 ---
 
@@ -81,8 +119,8 @@ func _generate_static_entities() -> void:
 
 # 生成热源
 func _generate_heat_sources() -> void:
-	# 随机生成3-5个热源
-	var heat_source_count: int = randi() % 3 + 3  # 3-5个
+	# 随机生成热源
+	var heat_source_count: int = randi() % (tuning.spawn_heat_source_count_max - tuning.spawn_heat_source_count_min + 1) + tuning.spawn_heat_source_count_min
 
 	for i in range(heat_source_count):
 		var heat_source: StaticEntityData = StaticEntityData.new()
@@ -136,66 +174,17 @@ func _get_player_entity() -> EntityData:
 			return entity
 	return null
 
-# --- 资源采集系统 ---
-
-# 查找最近的资源点
-func _find_nearest_resource(player_pos: Vector2) -> StaticEntityData:
-	var nearest_resource: StaticEntityData = null
-	var min_distance: float = harvest_distance
-
-	for static_ent in static_entities:
-		# 只检查资源类型且未耗尽的实体
-		if static_ent.type == "resource" and not static_ent.is_depleted:
-			var distance: float = player_pos.distance_to(static_ent.position)
-			if distance < min_distance:
-				min_distance = distance
-				nearest_resource = static_ent
-
-	return nearest_resource
+# --- 资源采集系统（已拆分到 HarvestSystem）---
 
 # 采集资源
 func harvest_resource(player_data: EntityData) -> void:
-	var nearest_resource: StaticEntityData = _find_nearest_resource(player_data.position)
-
-	if nearest_resource == null:
-		print("[WorldManager] 附近没有可采集的资源")
-		EventBus.announcement.emit("附近没有可采集的资源")
-		return
-
-	# 计算采集收益
-	var harvest_gain: float = base_harvest_gain
-
-	# 禁忌加成：宜挖掘时收益翻倍
-	if CalendarManager.current_taboo == CalendarManager.Taboo.SUIT_DIGGING:
-		harvest_gain *= 2.0
-		print("[WorldManager] 禁忌加成：采集收益翻倍！")
-		EventBus.announcement.emit("宜挖掘：采集效率翻倍！")
-
-	# 采集资源
-	nearest_resource.resource_amount -= harvest_gain
-
-	# 更新玩家能量
-	player_data.energy += harvest_gain
-	player_data.energy = min(player_data.energy, 100.0)  # 上限100
-
-	# 发送状态更新信号
-	EventBus.player_stat_updated.emit("energy", player_data.energy)
-	EventBus.resource_harvested.emit(player_data, harvest_gain)
-
-	print("[WorldManager] 采集成功！获得能量: ", harvest_gain, " 剩余资源: ", nearest_resource.resource_amount)
-	EventBus.announcement.emit("采集成功！获得能量: " + str(harvest_gain))
-
-	# 检查资源是否耗尽
-	if nearest_resource.resource_amount <= 0.0:
-		nearest_resource.is_depleted = true
-		print("[WorldManager] 资源耗尽: ", nearest_resource.id)
-		EventBus.static_entity_depleted.emit(nearest_resource)
-		EventBus.announcement.emit("资源已耗尽")
+	if harvest_system != null:
+		harvest_system.harvest_resource(player_data, static_entities)
 
 # 生成资源点（在静态实体生成函数中添加）
 func _generate_resource_entities() -> void:
-	# 生成2-4个资源点
-	var resource_count: int = randi() % 3 + 2  # 2-4个
+	# 生成资源点
+	var resource_count: int = randi() % (tuning.spawn_resource_count_max - tuning.spawn_resource_count_min + 1) + tuning.spawn_resource_count_min
 
 	for i in range(resource_count):
 		var resource: StaticEntityData = StaticEntityData.new()
@@ -218,6 +207,19 @@ func _generate_resource_entities() -> void:
 func tick_step() -> void:
 	current_tick += 1
 
+	# 使用代谢系统处理所有实体
+	if metabolism_system != null:
+		metabolism_system.process_entities(entities, ticks_per_second)
+
+	# 使用温度系统处理所有实体
+	if temperature_system != null:
+		temperature_system.process_entities(entities, ticks_per_second)
+
+	# 使用AI系统处理机械体
+	if ai_system != null:
+		ai_system.process_entities(entities)
+
+	# 处理其他逻辑
 	for entity in entities:
 		if not is_instance_valid(entity):
 			continue
@@ -225,12 +227,11 @@ func tick_step() -> void:
 		# 1. 基础演化 (变老)
 		entity.age_step(1)
 
-		# 2. 代谢系统处理
-		_handle_metabolism(entity)
-
-		# 3. 简单的 AI 决策：机械体捕食逻辑
-		if entity.entity_type == "mechanical":
-			_handle_mechanical_ai(entity)
+		# 2. 玩家状态同步（仅对玩家实体）
+		if entity.entity_type == "player":
+			EventBus.player_stat_updated.emit("energy", entity.energy)
+			EventBus.player_stat_updated.emit("health", entity.health)
+			EventBus.player_stat_updated.emit("temperature", entity.temperature)
 
 	world_ticked.emit(current_tick)
 
@@ -255,145 +256,25 @@ func _step_world_clock(delta: float) -> void:
 	# 计算时间比例并更新昼夜状态
 	var time_ratio: float = world_time / day_length_seconds
 	CalendarManager.update_time_phase(time_ratio)
+	world_clock_updated.emit(CalendarManager.day_count, time_ratio, CalendarManager.is_night)
 
 
-# --- 代谢系统 ---
+func player_attack(
+	attacker: EntityData,
+	facing_direction: Vector2,
+	attack_radius: float,
+	attack_angle: float,
+	base_damage: float
+) -> int:
+	if combat_system != null:
+		return combat_system.player_attack(attacker, facing_direction, attack_radius, attack_angle, base_damage, entities)
+	return 0
 
 
-# 代谢解算器：处理能量消耗和禁忌惩罚
-func _handle_metabolism(entity: EntityData) -> void:
-	# 跳过静态障碍物
-	if entity.entity_type == "static":
-		return
+# --- 代谢系统（已拆分到 MetabolismSystem）---
+# --- 体温系统（已拆分到 TemperatureSystem）---
 
-	# 计算真实位移速度（基于前后帧位置差）
-	var velocity: Vector2 = _calculate_entity_velocity(entity)
-
-	# 基础代谢速率（每秒消耗）
-	var base_metabolic_rate: float = 0.05
-
-	# 环境压迫：夜晚代谢加速
-	if CalendarManager.is_night:
-		base_metabolic_rate *= 1.5
-
-	# 禁忌惩罚：忌出行时的移动惩罚
-	var movement_multiplier: float = 1.0
-	if CalendarManager.current_taboo == CalendarManager.Taboo.AVOID_TRAVEL:
-		if velocity.length() > 0.1:  # 如果实体正在移动
-			movement_multiplier = 5.0  # 移动时能量消耗x5
-
-	# 计算总能量消耗
-	var energy_consumption: float = base_metabolic_rate * movement_multiplier
-
-	# 应用能量消耗
-	entity.energy = max(0.0, entity.energy - energy_consumption)
-
-	# 空腹惩罚：能量耗尽时扣除生命值
-	if entity.energy <= 0.0:
-		entity.health -= 0.1  # 每秒扣除0.1生命值
-		entity.health = max(0.0, entity.health)
-
-	# 体温系统处理
-	_handle_temperature(entity)
-
-	# 玩家状态同步（仅对玩家实体）
-	if entity.entity_type == "player":
-		EventBus.player_stat_updated.emit("energy", entity.energy)
-		EventBus.player_stat_updated.emit("health", entity.health)
-		EventBus.player_stat_updated.emit("temperature", entity.temperature)
-
-# 计算实体速度（通过前后帧位置差）
-func _calculate_entity_velocity(entity: EntityData) -> Vector2:
-	# 计算当前位置与上一帧位置的差值
-	var displacement: Vector2 = entity.position - entity.last_position
-
-	# 更新上一帧位置（为下一帧计算做准备）
-	entity.last_position = entity.position
-
-	# 返回位移向量（每秒位移量）
-	return displacement * ticks_per_second
-
-# 体温系统：处理环境温度影响
-func _handle_temperature(entity: EntityData) -> void:
-	# 跳过静态障碍物
-	if entity.entity_type == "static":
-		return
-
-	# 体温变化速率（每秒）
-	var temperature_change: float = 0.0
-
-	# 环境影响：夜晚失温
-	if CalendarManager.is_night and not entity.is_near_heat_source:
-		temperature_change = -0.5  # 每秒下降0.5度
-
-	# 热源恢复：靠近热源时回温
-	if entity.is_near_heat_source:
-		temperature_change = 1.0  # 每秒回升1.0度
-
-	# 应用体温变化
-	entity.temperature += temperature_change / ticks_per_second
-
-	# 体温限制：正常体温范围
-	entity.temperature = clamp(entity.temperature, 20.0, 36.5)
-
-	# 失温惩罚：体温过低时扣除生命值
-	if entity.temperature < 30.0:
-		var hypothermia_damage: float = (30.0 - entity.temperature) * 0.05
-		entity.health -= hypothermia_damage
-		entity.health = max(0.0, entity.health)
-
-
-# 针对 MX110 优化的数组查找逻辑
-# world_manager.gd 中的修正版函数
-func _handle_mechanical_ai(hunter: EntityData) -> void:
-	# 1. 寻找最近的猎物（玩家优先级）
-	var nearest_prey: EntityData = null
-	var min_dist = 400.0  # 感知范围
-
-	for target in entities:
-		# 跳过无效目标
-		if target.health <= 0:
-			continue
-
-		var d: float = hunter.position.distance_to(target.position)
-		if d > min_dist:
-			continue
-
-		# 判断目标类型
-		var is_player: bool = target.entity_type == "player"
-		var is_organic: bool = target.entity_type == "organic"
-
-		# 玩家优先级逻辑
-		if is_player:
-			# 锁定玩家：除非有更近的玩家，否则不切换目标
-			nearest_prey = target
-			min_dist = d
-		elif is_organic and (nearest_prey == null or nearest_prey.entity_type != "player"):
-			# 只有当前没有锁定玩家时，才考虑有机体
-			if d < min_dist:
-				nearest_prey = target
-				min_dist = d
-
-	# 2. 决策行为
-	if nearest_prey:
-		# --- 核心改进：移动逻辑 ---
-		# 只有当距离大于 5 像素时才真正执行移动
-		# 这样可以防止在目标点附近"反复横跳"
-		if min_dist > 5.0:
-			var dir = (nearest_prey.position - hunter.position).normalized()
-			# 计算本次 tick 的位移量
-			var movement = dir * hunter.move_speed * 0.1
-			hunter.position += movement
-
-		# --- 核心改进：伤害逻辑 ---
-		# 只有足够近（小于 10 像素）才吸血
-		if min_dist < 10.0:
-			nearest_prey.health -= 5.0  # 有机体扣血
-			hunter.health = min(100.0, hunter.health + 2.0)  # 机械体回血
-
-	# 【重要修复】无论有没有猎物，都得守法（不穿墙、不撞墙）
-	hunter.position = clamp_position(hunter.position)
-	resolve_collisions(hunter)
+# --- AI系统（已拆分到 SimpleAISystem）---
 
 
 # --- 实体管理 ---
@@ -419,7 +300,7 @@ func save_world(slot_name: String) -> void:
 	# 复制当前世界状态（避免引用问题）
 	world_data.entities = entities.duplicate(true)
 	world_data.current_tick = current_tick
-	world_data.save_timestamp = Time.get_unix_time_from_system()
+	world_data.save_timestamp = int(Time.get_unix_time_from_system())
 
 	# 构建保存路径
 	var save_path: String = "user://saves/" + slot_name + ".res"
@@ -519,6 +400,42 @@ func clear_world() -> void:
 	current_tick = 0
 	accumulator = 0.0
 	print("世界状态已清空")
+
+# --- Debug 统计函数 ---
+
+# 打印 debug 统计信息
+func _print_debug_stats() -> void:
+	if tick_time_samples == 0:
+		return
+
+	var avg_tick_time: float = tick_time_accumulator / tick_time_samples
+	var total_entity_count: int = entities.size()
+	var player_count: int = 0
+	var organic_count: int = 0
+	var mechanical_count: int = 0
+	var static_count: int = 0
+
+	# 统计各类型实体数量
+	for entity in entities:
+		if entity.entity_type == "player":
+			player_count += 1
+		elif entity.entity_type == "organic":
+			organic_count += 1
+		elif entity.entity_type == "mechanical":
+			mechanical_count += 1
+		elif entity.entity_type == "static":
+			static_count += 1
+
+	static_count += static_entities.size()
+
+	print("--- WorldManager Debug Stats ---")
+	print("Tick: ", current_tick, " | Avg Tick Time: ", "%.3f" % avg_tick_time, "ms")
+	print("Entities: ", total_entity_count, " (Player:", player_count, " Organic:", organic_count, " Mechanical:", mechanical_count, " Static:", static_count, ")")
+	print("--------------------------------")
+
+	# 重置统计器
+	tick_time_accumulator = 0.0
+	tick_time_samples = 0
 
 # --- 辅助数据容器 ---
 

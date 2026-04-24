@@ -8,6 +8,7 @@ extends CanvasLayer
 var announcement_timer: float = 0.0
 var current_day: int = 1
 var current_time_ratio: float = 0.0
+var has_world_clock_data: bool = false
 
 # --- UI节点引用 ---
 @onready var time_label: Label = $VBoxContainer/TimeLabel
@@ -24,6 +25,8 @@ func _ready() -> void:
 	EventBus.taboo_changed.connect(_on_taboo_updated)
 	EventBus.time_phase_changed.connect(_on_time_phase_changed)
 	EventBus.announcement.connect(_on_announcement)
+	if not WorldManager.world_clock_updated.is_connected(_on_world_clock_updated):
+		WorldManager.world_clock_updated.connect(_on_world_clock_updated)
 
 	# 初始化UI状态
 	_update_time_display()
@@ -38,8 +41,9 @@ func _process(delta: float) -> void:
 		if announcement_timer <= 0.0:
 			announcement_label.text = ""
 
-	# 更新时间显示（模拟实时时钟）
-	_update_time_display()
+	# 仅在世界时钟尚未推送数据时做一次兜底显示
+	if not has_world_clock_data:
+		_update_time_display()
 
 # --- 信号处理函数 ---
 
@@ -99,18 +103,19 @@ func _on_announcement(text: String) -> void:
 
 # 更新时间显示
 func _update_time_display() -> void:
-	# 模拟时间显示（实际应该从CalendarManager获取）
+	# 由WorldManager推送的真实时间比率转换为时钟显示
 	var minutes: int = int(current_time_ratio * 24 * 60) % (24 * 60)
-	var hours: int = minutes / 60
+	var hours: int = int(minutes / 60.0)
 	var mins: int = minutes % 60
 
 	time_label.text = "时间: 第%d天 - %02d:%02d" % [current_day, hours, mins]
 
-	# 模拟时间流逝（用于演示）
-	current_time_ratio += 0.0001  # 非常缓慢的时间流逝
-	if current_time_ratio >= 1.0:
-		current_time_ratio = 0.0
-		current_day += 1
+
+func _on_world_clock_updated(day_count: int, time_ratio: float, _is_night: bool) -> void:
+	has_world_clock_data = true
+	current_day = day_count
+	current_time_ratio = clampf(time_ratio, 0.0, 1.0)
+	_update_time_display()
 
 # 获取禁忌名称
 func _get_taboo_name(taboo: int) -> String:
