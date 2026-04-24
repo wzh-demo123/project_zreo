@@ -1,6 +1,6 @@
 # Project Zero 项目状态
 
-最后更新：2026-04-24
+最后更新：2026-04-24 22:04:00
 
 ## 项目快照
 
@@ -118,6 +118,8 @@ scripts/
   - 删除：WorldManager 中的旧函数（_handle_temperature、_handle_metabolism、_handle_mechanical_ai、_find_nearest_resource）
 - 修复：SimpleAISystem 中硬编码的 tick 间隔（0.1），改为从 ticks_per_second 动态计算
 - 状态：系统拆分完成，WorldManager 从 600+ 行缩减至约 400 行
+- 更新：flatten_code.py 添加 PROJECT_STATUS.md 到优先级文档列表
+- 更新：README.md 添加文档规范（时间戳格式）和 flatten_code.py 说明
 
 ### [2026-04-23]
 
