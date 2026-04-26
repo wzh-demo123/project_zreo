@@ -1,5 +1,5 @@
 # 📂 Project Zero: 全量架构快照 (Full Context)
-> **生成时间:** 2026-04-26 23:06:43
+> **生成时间:** 2026-04-26 23:27:48
 > **基础 Raw 路径:** `https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/`
 
 ## 🌳 完整目录结构
@@ -18,6 +18,13 @@
             ├── WORLD_DESIGN.md
     └── resources/
         └── sprite_configs/
+            ├── mechanical_unit.tres
+            ├── organic_animated.tres
+            ├── organic_archer.tres
+            ├── player.tres
+            ├── player_multi_source.tres
+            ├── player_spritesheet.tres
+            ├── static.tres
     └── scenes/
         ├── base_entity_view.tscn
         ├── main.tscn
@@ -320,7 +327,8 @@ INCLUDE_EXTS = [
     '.godot', # 项目配置
     '.md',    # 文档说明
     '.cfg',   # 配置文件
-    '.py'     # 脚本工具
+    '.py',    # 脚本工具
+    '.tres'   # Godot 资源文件（SpriteConfig等）
 ]
 
 # 定义排除的目录
@@ -466,7 +474,7 @@ renderer/rendering_method.mobile="gl_compatibility"
 - **Raw 链接:** [docs/md/AI_CONTEXT_MAP.md](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/docs/md/AI_CONTEXT_MAP.md)
 ```markdown
 # 📂 Project Zero: 全量架构快照 (Full Context)
-> **生成时间:** 2026-04-26 23:06:43
+> **生成时间:** 2026-04-26 23:27:48
 > **基础 Raw 路径:** `https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/`
 
 ## 🌳 完整目录结构
@@ -485,6 +493,13 @@ renderer/rendering_method.mobile="gl_compatibility"
             ├── WORLD_DESIGN.md
     └── resources/
         └── sprite_configs/
+            ├── mechanical_unit.tres
+            ├── organic_animated.tres
+            ├── organic_archer.tres
+            ├── player.tres
+            ├── player_multi_source.tres
+            ├── player_spritesheet.tres
+            ├── static.tres
     └── scenes/
         ├── base_entity_view.tscn
         ├── main.tscn
@@ -1063,6 +1078,204 @@ sprite_path = "res://assets/Tiny Swords (Free Pack)/Units/Blue Units/Archer/Arch
 
 - 死亡不重置世界。前世遗骸会转化为后世的资源、防御塔或“数据鬼魂”。
 - 生态系统会根据统治度 (Dominance) 自主进行网格同化。
+
+```
+
+---
+
+### 🔗 文件: resources\sprite_configs\mechanical_unit.tres
+- **Raw 链接:** [resources/sprite_configs/mechanical_unit.tres](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/resources/sprite_configs/mechanical_unit.tres)
+```gdscript
+[gd_resource type="Resource" script_class="SpriteConfig" load_steps=2 format=3 uid="uid://cnt6m5krc4p41"]
+
+[ext_resource type="Script" path="res://scripts/core/sprite_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entity_type = "mechanical"
+entity_id = "mechanical"
+scale = Vector2(3, 3)
+offset = Vector2(0, 0)
+flip_h = false
+animation_fps = 8.0
+loop_animation = true
+animations = {}
+use_spritesheet = false
+spritesheet_path = ""
+animation_sources = {}
+spritesheet_regions = {}
+sprite_path = "res://assets/entities/mechanical/warrior.png"
+
+```
+
+---
+
+### 🔗 文件: resources\sprite_configs\organic_animated.tres
+- **Raw 链接:** [resources/sprite_configs/organic_animated.tres](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/resources/sprite_configs/organic_animated.tres)
+```gdscript
+[gd_resource type="Resource" script_class="SpriteConfig" load_steps=2 format=3 uid="uid://sprite_config_organic_animated"]
+
+[ext_resource type="Script" path="res://scripts/core/sprite_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entity_type = "organic"
+entity_id = "organic_animated"
+scale = Vector2(2, 2)
+offset = Vector2(0, 0)
+flip_h = false
+animation_fps = 8.0
+loop_animation = true
+animations = {
+"idle": ["res://assets/entities/organic/archer_idle_0.png", "res://assets/entities/organic/archer_idle_1.png"],
+"attack": ["res://assets/entities/organic/archer_attack_0.png"],
+"walk": ["res://assets/entities/organic/archer_walk_0.png", "res://assets/entities/organic/archer_walk_1.png", "res://assets/entities/organic/archer_walk_2.png"]
+}
+sprite_path = ""
+
+```
+
+---
+
+### 🔗 文件: resources\sprite_configs\organic_archer.tres
+- **Raw 链接:** [resources/sprite_configs/organic_archer.tres](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/resources/sprite_configs/organic_archer.tres)
+```gdscript
+[gd_resource type="Resource" script_class="SpriteConfig" load_steps=2 format=3 uid="uid://sprite_config_organic"]
+
+[ext_resource type="Script" path="res://scripts/core/sprite_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entity_type = "organic"
+entity_id = "organic"
+scale = Vector2(2, 2)
+offset = Vector2(0, 0)
+flip_h = false
+animation_fps = 8.0
+loop_animation = true
+animations = {}
+use_spritesheet = false
+spritesheet_path = ""
+animation_sources = {}
+spritesheet_regions = {}
+sprite_path = "res://assets/entities/organic/archer.png"
+
+```
+
+---
+
+### 🔗 文件: resources\sprite_configs\player.tres
+- **Raw 链接:** [resources/sprite_configs/player.tres](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/resources/sprite_configs/player.tres)
+```gdscript
+[gd_resource type="Resource" script_class="SpriteConfig" load_steps=2 format=3 uid="uid://c1gim2seyk7ga"]
+
+[ext_resource type="Script" path="res://scripts/core/sprite_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entity_type = "player"
+entity_id = "player"
+scale = Vector2(1, 1)
+offset = Vector2(0, 0)
+flip_h = false
+animation_fps = 8.0
+loop_animation = true
+animations = {}
+use_spritesheet = false
+spritesheet_path = ""
+animation_sources = {}
+spritesheet_regions = {}
+sprite_path = "res://assets/entities/player/player.png"
+
+```
+
+---
+
+### 🔗 文件: resources\sprite_configs\player_multi_source.tres
+- **Raw 链接:** [resources/sprite_configs/player_multi_source.tres](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/resources/sprite_configs/player_multi_source.tres)
+```gdscript
+[gd_resource type="Resource" script_class="SpriteConfig" load_steps=2 format=3 uid="uid://sprite_config_player_multi"]
+
+[ext_resource type="Script" path="res://scripts/core/sprite_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entity_type = "player"
+entity_id = "player_multi"
+scale = Vector2(1, 1)
+offset = Vector2(0, 0)
+flip_h = false
+animation_fps = 8.0
+loop_animation = true
+animations = {}
+use_spritesheet = true
+spritesheet_path = "res://assets/Character/player.png"
+animation_sources = {
+"idle": "res://assets/Character/player.png",
+"move": "res://assets/entities/player/player.png"
+}
+spritesheet_regions = {
+"idle": [Rect2(0, 0, 32, 32), Rect2(32, 0, 32, 32), Rect2(64, 0, 32, 32), Rect2(96, 0, 32, 32)],
+"move": [Rect2(0, 0, 32, 32), Rect2(32, 0, 32, 32)]
+}
+sprite_path = ""
+
+```
+
+---
+
+### 🔗 文件: resources\sprite_configs\player_spritesheet.tres
+- **Raw 链接:** [resources/sprite_configs/player_spritesheet.tres](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/resources/sprite_configs/player_spritesheet.tres)
+```gdscript
+[gd_resource type="Resource" script_class="SpriteConfig" load_steps=2 format=3 uid="uid://sprite_config_player_sheet"]
+
+[ext_resource type="Script" path="res://scripts/core/sprite_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entity_type = "player"
+entity_id = "player_sheet"
+scale = Vector2(1, 1)
+offset = Vector2(0, 0)
+flip_h = false
+animation_fps = 8.0
+loop_animation = true
+animations = {}
+use_spritesheet = true
+spritesheet_path = "res://assets/Character/player.png"
+spritesheet_regions = {
+"idle": [Rect2(0, 0, 32, 32), Rect2(32, 0, 32, 32)],
+"walk": [Rect2(0, 32, 32, 32), Rect2(32, 32, 32, 32), Rect2(64, 32, 32, 32)],
+"attack": [Rect2(0, 64, 32, 32)]
+}
+sprite_path = ""
+
+```
+
+---
+
+### 🔗 文件: resources\sprite_configs\static.tres
+- **Raw 链接:** [resources/sprite_configs/static.tres](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/resources/sprite_configs/static.tres)
+```gdscript
+[gd_resource type="Resource" script_class="SpriteConfig" load_steps=2 format=3 uid="uid://sprite_config_static"]
+
+[ext_resource type="Script" path="res://scripts/core/sprite_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entity_type = "static"
+entity_id = "static"
+scale = Vector2(2, 2)
+offset = Vector2(0, 0)
+flip_h = false
+animation_fps = 8.0
+loop_animation = false
+animations = {}
+use_spritesheet = false
+spritesheet_path = ""
+animation_sources = {}
+spritesheet_regions = {}
+sprite_path = "res://assets/entities/static/rock.png"
 
 ```
 

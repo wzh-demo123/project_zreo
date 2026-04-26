@@ -20,7 +20,8 @@ INCLUDE_EXTS = [
     '.godot', # 项目配置
     '.md',    # 文档说明
     '.cfg',   # 配置文件
-    '.py'     # 脚本工具
+    '.py',    # 脚本工具
+    '.tres'   # Godot 资源文件（SpriteConfig等）
 ]
 
 # 定义排除的目录
