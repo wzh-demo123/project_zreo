@@ -8,11 +8,13 @@ extends RefCounted
 var tuning: WorldTuning
 var world_bounds: Rect2
 var ticks_per_second: float
+var event_bus: EventBus
 
-func _init(p_tuning: WorldTuning, p_world_bounds: Rect2, p_ticks_per_second: float):
+func _init(p_tuning: WorldTuning, p_world_bounds: Rect2, p_ticks_per_second: float, p_event_bus: EventBus):
 	tuning = p_tuning
 	world_bounds = p_world_bounds
 	ticks_per_second = p_ticks_per_second
+	event_bus = p_event_bus
 
 ## 处理机械体AI（针对 MX110 优化的数组查找逻辑）
 func process_mechanical_ai(hunter: EntityData, entities: Array[EntityData]) -> void:
@@ -59,8 +61,17 @@ func process_mechanical_ai(hunter: EntityData, entities: Array[EntityData]) -> v
 		# --- 核心改进：伤害逻辑 ---
 		# 只有足够近才吸血
 		if min_dist < tuning.combat_mechanical_attack_range:
-			nearest_prey.health -= tuning.combat_mechanical_damage  # 有机体扣血
+			var damage: float = tuning.combat_mechanical_damage
+			nearest_prey.health -= damage  # 有机体扣血
 			hunter.health = min(100.0, hunter.health + tuning.combat_mechanical_heal)  # 机械体回血
+			
+			# 发出受伤信号（驱动UI更新）
+			event_bus.entity_damaged.emit(nearest_prey, damage, hunter.position)
+			
+			# 如果受伤的是玩家，发出状态更新信号
+			if nearest_prey.entity_type == "player":
+				event_bus.player_stat_updated.emit("health", nearest_prey.health)
+				print("[AI] 机械体 ", hunter.id, " 攻击玩家，造成 ", damage, " 点伤害")
 
 	# 【重要修复】无论有没有猎物，都得守法（不穿墙、不撞墙）
 	hunter.position = _clamp_position(hunter.position)

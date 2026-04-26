@@ -6,6 +6,7 @@ extends Resource
 @export var entity_type: String = "unknown"
 @export var faction: String = "neutral"
 @export var health: float = 100.0
+@export var max_health: float = 100.0  # 最大生命值
 @export var position: Vector2 = Vector2.ZERO
 @export var age_ticks: int = 0
 

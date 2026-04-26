@@ -51,4 +51,8 @@ func player_attack(
 		hit_count += 1
 		event_bus.entity_damaged.emit(entity, final_damage, hit_origin)
 
+		# 如果受伤的是玩家，额外发出玩家状态更新信号
+		if entity.entity_type == "player":
+			event_bus.player_stat_updated.emit("health", entity.health)
+
 	return hit_count

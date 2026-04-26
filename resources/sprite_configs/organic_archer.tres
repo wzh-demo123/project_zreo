@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SpriteConfig" load_steps=2 format=3 uid="uid://sprite_config_organic"]
+
+[ext_resource type="Script" path="res://scripts/core/sprite_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entity_type = "organic"
+entity_id = "organic"
+scale = Vector2(2, 2)
+offset = Vector2(0, 0)
+flip_h = false
+animation_fps = 8.0
+loop_animation = true
+animations = {}
+use_spritesheet = false
+spritesheet_path = ""
+animation_sources = {}
+spritesheet_regions = {}
+sprite_path = "res://assets/entities/organic/archer.png"

@@ -9,14 +9,10 @@ extends Node
 @export var target_view: BaseEntityView = null
 
 # --- 平衡参数配置 ---
-@export var tuning: WorldTuning = WorldTuning.new()  # 平衡参数资源
+@export var tuning: WorldTuning = WorldTuning.new()  # 平衡参数资源（独立实例，便于开发测试）
 
 # --- 战斗系统 ---
-@export_group("Combat")
-@export var attack_damage: float = 30.0  # 已废弃，使用 tuning.combat_player_damage
-@export var attack_cooldown: float = 0.4  # 已废弃，使用 tuning.combat_cooldown
-@export var attack_radius: float = 40.0  # 已废弃，使用 tuning.combat_radius
-@export var attack_angle: float = 90.0  # 已废弃，使用 tuning.combat_angle
+# 注意：战斗参数现在通过 tuning 配置，废弃以下参数以避免混淆
 
 # --- 采集系统 ---
 @export_group("Harvest")

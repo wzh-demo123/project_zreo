@@ -7,10 +7,12 @@ extends RefCounted
 
 var tuning: WorldTuning
 var calendar_manager: CalendarManager
+var event_bus: EventBus
 
-func _init(p_tuning: WorldTuning, p_calendar_manager: CalendarManager):
+func _init(p_tuning: WorldTuning, p_calendar_manager: CalendarManager, p_event_bus: EventBus):
 	tuning = p_tuning
 	calendar_manager = p_calendar_manager
+	event_bus = p_event_bus
 
 ## 计算实体速度（通过前后帧位置差）
 func _calculate_entity_velocity(entity: EntityData, ticks_per_second: float) -> Vector2:
@@ -55,6 +57,10 @@ func process_metabolism(entity: EntityData, ticks_per_second: float) -> void:
 	if entity.energy <= 0.0:
 		entity.health -= tuning.metabolism_starvation_damage  # 每秒扣除生命值
 		entity.health = max(0.0, entity.health)
+		
+		# 如果是玩家，发出状态更新信号
+		if entity.entity_type == "player":
+			event_bus.player_stat_updated.emit("health", entity.health)
 
 ## 处理多个实体的代谢逻辑
 func process_entities(entities: Array[EntityData], ticks_per_second: float) -> void:

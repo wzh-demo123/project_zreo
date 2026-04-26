@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 WorldManager="*res://scripts/core/world_manager.gd"
 EventBus="*res://scripts/core/event_bus.gd"
+SpriteManager="*res://scripts/core/sprite_manager.gd"
 CalendarManager="*res://scripts/core/calendar_manager.gd"
 
 [rendering]

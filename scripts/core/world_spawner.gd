@@ -199,7 +199,9 @@ func _create_entity(entity_type: String, entity_id: String) -> void:
 	entity_data.id = entity_id
 	entity_data.entity_type = entity_type
 	entity_data.faction = _get_faction_by_type(entity_type)
-	entity_data.health = _get_initial_health(entity_type)
+	var initial_health: float = _get_initial_health(entity_type)
+	entity_data.health = initial_health
+	entity_data.max_health = initial_health  # 设置最大生命值
 	entity_data.position = _get_random_position()
 
 	# 绑定数据到视图
@@ -251,7 +253,9 @@ func _create_static_obstacle(obstacle_id: String) -> void:
 	obstacle_data.id = obstacle_id
 	obstacle_data.entity_type = "static"
 	obstacle_data.faction = "neutral"
-	obstacle_data.health = tuning.entity_static_health  # 障碍物不可摧毁
+	var static_health: float = tuning.entity_static_health
+	obstacle_data.health = static_health
+	obstacle_data.max_health = static_health  # 设置最大生命值
 	obstacle_data.collision_radius = randf_range(tuning.entity_collision_radius_min, tuning.entity_collision_radius_max)
 	obstacle_data.position = _get_random_position()
 

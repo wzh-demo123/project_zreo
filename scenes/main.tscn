@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=4 uid="uid://c3pno5hr8r6jo"]
+[gd_scene load_steps=15 format=4 uid="uid://c3pno5hr8r6jo"]
 
 [ext_resource type="Texture2D" uid="uid://b13nwsa6xoxb" path="res://assets/Terrain/Tileset/Tilemap_color1.png" id="1_1fjc7"]
 [ext_resource type="Script" path="res://scripts/core/world_spawner.gd" id="1_p6nn4"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://scripts/core/camera.gd" id="4_ocl17"]
 [ext_resource type="Script" path="res://scripts/core/entity_data.gd" id="4_q3diw"]
 [ext_resource type="Script" path="res://scripts/core/world_settings.gd" id="5_qn0tx"]
+[ext_resource type="Script" path="res://scripts/core/world_tuning.gd" id="6_8hnto"]
 [ext_resource type="PackedScene" path="res://scenes/ui/debug_hud.tscn" id="6_debug"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_63wuf"]
@@ -62,12 +63,53 @@ texture_region_size = Vector2i(64, 64)
 tile_size = Vector2i(64, 64)
 sources/1 = SubResource("TileSetAtlasSource_63wuf")
 
+[sub_resource type="Resource" id="Resource_s641t"]
+script = ExtResource("6_8hnto")
+metabolism_base_rate = 0.05
+metabolism_night_multiplier = 1.5
+metabolism_travel_penalty = 5.0
+metabolism_starvation_damage = 0.1
+temp_night_change = -0.5
+temp_heat_source_change = 1.0
+temp_min = 20.0
+temp_max = 36.5
+temp_hypothermia_threshold = 30.0
+temp_hypothermia_damage_multiplier = 0.05
+combat_player_damage = 30.0
+combat_cooldown = 0.4
+combat_radius = 100.0
+combat_angle = 90.0
+combat_mechanical_damage = 5.0
+combat_mechanical_heal = 2.0
+combat_mechanical_detection_range = 400.0
+combat_mechanical_attack_range = 10.0
+combat_mechanical_move_threshold = 5.0
+harvest_distance = 100.0
+harvest_base_gain = 10.0
+harvest_taboo_bonus_multiplier = 2.0
+harvest_energy_max = 100.0
+taboo_killing_damage_penalty = 0.5
+spawn_organic_count = 20
+spawn_mechanical_count = 3
+spawn_static_obstacle_count = 15
+spawn_heat_source_count_min = 3
+spawn_heat_source_count_max = 5
+spawn_resource_count_min = 2
+spawn_resource_count_max = 4
+spawn_range = Vector2(1000, 1000)
+entity_organic_health = 50.0
+entity_mechanical_health = 150.0
+entity_static_health = 9999.0
+entity_collision_radius_min = 30.0
+entity_collision_radius_max = 50.0
+
 [sub_resource type="Resource" id="Resource_3or8t"]
 script = ExtResource("4_q3diw")
 id = "player_01"
 entity_type = "player"
 faction = "neutral"
 health = 100.0
+max_health = 100.0
 position = Vector2(0, 0)
 age_ticks = 0
 move_speed = 150.0
@@ -98,7 +140,7 @@ mechanical_count = 5
 [node name="PlayerController" type="Node" parent="WorldLogic" node_paths=PackedStringArray("target_view")]
 script = ExtResource("3_22o7b")
 target_view = NodePath("../../Entities/Player")
-attack_radius = 100.0
+tuning = SubResource("Resource_s641t")
 
 [node name="WorldSettings" type="Node2D" parent="WorldLogic"]
 script = ExtResource("5_qn0tx")

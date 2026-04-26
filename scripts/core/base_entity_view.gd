@@ -9,21 +9,12 @@ extends Node2D
 @export var follow_lerp_speed: float = 20.0 # 位置跟随速度
 @export var rotation_speed: float = 10.0 # 转向速度
 
-# 动态贴图配置组
-@export_group("Visual Textures")
-@export var tex_organic: Texture2D = null # 有机体贴图
-@export var tex_mechanical: Texture2D = null # 机械体贴图
-@export var tex_player: Texture2D = null # 玩家贴图
-@export var tex_static: Texture2D = null # 静态障碍物贴图
-
-# 贴图缩放配置
-@export var scale_organic: Vector2 = Vector2(1.0, 1.0) # 有机体缩放
-@export var scale_mechanical: Vector2 = Vector2(1.0, 1.0) # 机械体缩放
-@export var scale_player: Vector2 = Vector2(1.0, 1.0) # 玩家缩放
-@export var scale_static: Vector2 = Vector2(1.0, 1.0) # 静态障碍物缩放
+# Sprite配置（通过entity_id从SpriteManager获取）
+@export var entity_visual_id: String = "" # 可选：指定具体的视觉配置ID，为空则使用entity_type
 
 # 缓存的节点引用
 var sprite_node: Sprite2D = null
+var animated_sprite: AnimatedSprite2D = null
 var health_bar: ProgressBar = null
 
 # 动画和调试状态
@@ -40,7 +31,8 @@ var debug_timer: float = 0.0
 func _ready() -> void:
 	# 缓存节点引用（避免_process中频繁get_node）
 	sprite_node = get_node_or_null("Sprite2D")
-	health_bar = get_node_or_null("HealthBar")
+	animated_sprite = get_node_or_null("AnimatedSprite2D")
+	health_bar = get_node_or_null("HealthBarContainer/HealthBar")
 
 	# 加入实体视图组，便于统一管理
 	add_to_group("entity_views")
@@ -55,7 +47,7 @@ func _ready() -> void:
 
 	# 初始化血条
 	if health_bar != null:
-		health_bar.max_value = data.health
+		health_bar.max_value = data.max_health
 		health_bar.value = data.health
 
 	# 设置视觉表现（贴图 + 颜色）
@@ -68,11 +60,10 @@ func _ready() -> void:
 	# 连接受伤事件（如果EventBus存在）
 	_connect_damage_events()
 
-	print("实体视图初始化完成: ", data.id)
 	# 显示血条
 	if health_bar != null:
-		health_bar.show() # <--- 关键：启动游戏时强制让它显示出来
-		health_bar.max_value = data.health
+		health_bar.show()
+		health_bar.max_value = data.max_health
 		health_bar.value = data.health
 
 
@@ -127,52 +118,68 @@ func _handle_facing_direction(_delta: float) -> void:
 
 # 设置视觉表现（贴图 + 颜色）
 func _setup_visuals() -> void:
-	if sprite_node == null:
+	# 从SpriteManager获取配置（Autoload全局变量）
+	var visual_id: String = entity_visual_id if entity_visual_id != "" else data.entity_type
+	var config: SpriteConfig = SpriteManager.get_sprite_config(data.entity_type, visual_id)
+	
+	if config == null:
+		# 没有配置时使用颜色fallback
+		if sprite_node != null:
+			_apply_fallback_color()
 		return
+	
+	# 应用Sprite配置
+	if config.is_animated() and animated_sprite != null:
+		# 动画精灵 - 使用新的多帧配置
+		animated_sprite.sprite_frames = config.create_sprite_frames()
+		animated_sprite.scale = config.scale
+		animated_sprite.position = config.offset
+		animated_sprite.flip_h = config.flip_h
+		animated_sprite.visible = true
+		
+		# 播放默认动画
+		var default_anim: String = config.get_default_animation()
+		if default_anim != "":
+			animated_sprite.play(default_anim)
+		
+		if sprite_node != null:
+			sprite_node.visible = false
+			
+	elif sprite_node != null:
+		# 静态精灵
+		var texture: Texture2D = config.get_texture()
+		if texture != null:
+			sprite_node.texture = texture
+			sprite_node.scale = config.scale
+			sprite_node.position = config.offset
+			sprite_node.flip_h = config.flip_h
+			sprite_node.self_modulate = Color.WHITE
+			sprite_node.visible = true
+		
+		if animated_sprite != null:
+			animated_sprite.visible = false
+	
+	# 给玩家视图添加特殊标签
+	if data.entity_type == "player":
+		add_to_group("player_view")
 
-	var texture_applied: bool = false
+# 播放指定动画（外部调用）
+func play_animation(anim_name: String) -> void:
+	if animated_sprite != null and animated_sprite.sprite_frames != null:
+		if animated_sprite.sprite_frames.has_animation(anim_name):
+			animated_sprite.play(anim_name)
 
-	# 优先应用贴图
-	match data.entity_type:
-		"organic":
-			if tex_organic != null:
-				sprite_node.texture = tex_organic
-				sprite_node.scale = scale_organic # 应用有机体缩放
-				texture_applied = true
-		"mechanical":
-			if tex_mechanical != null:
-				sprite_node.texture = tex_mechanical
-				sprite_node.scale = scale_mechanical # 应用机械体缩放
-				texture_applied = true
-		"player":
-			if tex_player != null:
-				sprite_node.texture = tex_player
-				sprite_node.scale = scale_player # 应用玩家缩放
-				texture_applied = true
+# 获取当前配置支持的动画名称列表
+func get_available_animations() -> Array[String]:
+	var visual_id: String = entity_visual_id if entity_visual_id != "" else data.entity_type
+	var config: SpriteConfig = SpriteManager.get_sprite_config(data.entity_type, visual_id)
+	if config != null:
+		return config.get_animation_names()
+	return []
 
-			# 给玩家视图添加特殊标签，便于摄像机识别
-			add_to_group("player_view")
-		"static":
-			if tex_static != null:
-				sprite_node.texture = tex_static
-				sprite_node.scale = scale_static # 应用静态障碍物缩放
-				texture_applied = true
-		"energy":
-			# 能量体：保持默认贴图，使用颜色区分
-			pass
-		"digital":
-			# 数字体：保持默认贴图，使用颜色区分
-			pass
-		_:
-			# 未知类型：保持默认设置
-			pass
-
-	# 如果贴图应用成功，重置为白色避免颜色污染
-	if texture_applied:
-		sprite_node.self_modulate = Color.WHITE
-	else:
-		# 否则使用颜色作为Fallback
-		_apply_fallback_color()
+# 判断当前是否使用动画精灵
+func is_using_animated_sprite() -> bool:
+	return animated_sprite != null and animated_sprite.visible
 
 
 # 备用颜色方案（当贴图未配置时使用）
@@ -344,7 +351,9 @@ func _on_entity_damaged(
 # 更新血条显示
 func _update_health_bar() -> void:
 	if health_bar != null:
-		health_bar.value = data.health
+		health_bar.show() # 确保受伤时显示血条
+		health_bar.max_value = data.max_health
+		health_bar.value = clamp(data.health, 0.0, data.max_health)
 
 
 # 播放受伤反馈动画

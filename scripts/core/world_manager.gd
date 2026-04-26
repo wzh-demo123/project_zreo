@@ -51,19 +51,16 @@ var debug_timer: float = 0.0
 # --- 初始化 ---
 func _ready() -> void:
 	# 初始化系统
-	temperature_system = load("res://scripts/core/systems/temperature_system.gd").new(tuning, CalendarManager)
-	metabolism_system = load("res://scripts/core/systems/metabolism_system.gd").new(tuning, CalendarManager)
+	temperature_system = load("res://scripts/core/systems/temperature_system.gd").new(tuning, CalendarManager, EventBus)
+	metabolism_system = load("res://scripts/core/systems/metabolism_system.gd").new(tuning, CalendarManager, EventBus)
 	combat_system = load("res://scripts/core/systems/combat_system.gd").new(tuning, CalendarManager, EventBus)
 	harvest_system = load("res://scripts/core/systems/harvest_system.gd").new(tuning, CalendarManager, EventBus)
-	ai_system = load("res://scripts/core/systems/simple_ai_system.gd").new(tuning, world_bounds, ticks_per_second)
+	ai_system = load("res://scripts/core/systems/simple_ai_system.gd").new(tuning, world_bounds, ticks_per_second, EventBus)
 
 	# 生成静态实体
 	_generate_static_entities()
 
-	print("WorldManager 初始化完成")
-	print("固定Tick频率: ", ticks_per_second, " Hz")
-	print("世界边界: ", world_bounds)
-	print("静态实体数量: ", static_entities.size())
+	print("WorldManager 初始化完成，Tick频率: ", ticks_per_second, " Hz，实体数量: ", static_entities.size())
 
 # --- 核心逻辑 ---
 
@@ -96,11 +93,11 @@ func _on_logic_tick(delta: float) -> void:
 	# 律法时钟步进（基于真实时间，不受固定tick影响）
 	_step_world_clock(delta)
 
-	# 定期输出 debug 统计
-	debug_timer += delta
-	if debug_timer >= debug_update_interval:
-		debug_timer = 0.0
-		_print_debug_stats()
+	# 定期输出 debug 统计（已禁用以减少console混乱）
+	# debug_timer += delta
+	# if debug_timer >= debug_update_interval:
+	# 	debug_timer = 0.0
+	# 	_print_debug_stats()
 
 # --- 静态实体系统 ---
 
@@ -115,7 +112,7 @@ func _generate_static_entities() -> void:
 	# 生成资源点
 	_generate_resource_entities()
 
-	print("[WorldManager] 静态实体生成完成，共生成 ", static_entities.size(), " 个静态实体")
+	# print("[WorldManager] 静态实体生成完成，共生成 ", static_entities.size(), " 个静态实体")
 
 # 生成热源
 func _generate_heat_sources() -> void:
@@ -134,7 +131,7 @@ func _generate_heat_sources() -> void:
 		# 发送信号通知View层生成视觉表现
 		EventBus.static_entity_spawned.emit(heat_source)
 
-		print("[WorldManager] 生成热源: ", heat_source.get_debug_info())
+		# print("[WorldManager] 生成热源: ", heat_source.get_debug_info())
 
 # 获取世界边界内的随机位置
 func _get_random_position_within_bounds() -> Vector2:
@@ -161,10 +158,10 @@ func _update_proximity_effects(player_data: EntityData) -> void:
 	# 状态变更反馈
 	if was_near_heat != found_heat:
 		if found_heat:
-			print("[WorldManager] 玩家进入热源范围，体温开始回升")
+			# print("[WorldManager] 玩家进入热源范围，体温开始回升")
 			EventBus.announcement.emit("感受到温暖，体温回升中...")
 		else:
-			print("[WorldManager] 玩家离开热源范围")
+			# print("[WorldManager] 玩家离开热源范围")
 			EventBus.announcement.emit("离开温暖区域，注意体温")
 
 # 获取玩家实体（辅助函数）
@@ -198,9 +195,9 @@ func _generate_resource_entities() -> void:
 		# 发送信号通知View层生成视觉表现
 		EventBus.static_entity_spawned.emit(resource)
 
-		print("[WorldManager] 生成资源点: ", resource.get_debug_info())
+		# print("[WorldManager] 生成资源点: ", resource.get_debug_info())
 
-	print("[WorldManager] 资源点生成完成，共生成 ", resource_count, " 个资源点")
+	# print("[WorldManager] 资源点生成完成，共生成 ", resource_count, " 个资源点")
 
 
 # world_manager.gd 中的核心逻辑更新

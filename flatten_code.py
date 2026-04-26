@@ -93,7 +93,7 @@ def generate_map():
         f.write("AI 协作前请务必先读取此部分的世界观约束。\n\n")
         for doc in PRIORITY_DOCS:
             if os.path.exists(doc) and doc != OUTPUT_FILE:
-                write_file_content(f, ".", doc)
+                write_file_content
 
         # 4. 遍历写入其余代码文件
         f.write("## 📄 全量代码与配置索引\n")
@@ -102,7 +102,8 @@ def generate_map():
             for filename in files:
                 # 排除已经置顶处理的文件和输出文件本身
                 if any(filename.endswith(ext) for ext in INCLUDE_EXTS):
-                    if filename in PRIORITY_DOCS or filename == OUTPUT_FILE:
+                    file_path = os.path.relpath(os.path.join(root, filename), ".")
+                    if file_path in PRIORITY_DOCS or file_path == OUTPUT_FILE:
                         continue
                     write_file_content(f, root, filename)
 
