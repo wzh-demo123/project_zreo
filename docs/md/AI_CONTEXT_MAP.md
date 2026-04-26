@@ -1,21 +1,23 @@
 # 📂 Project Zero: 全量架构快照 (Full Context)
-> **生成时间:** 2026-04-24 22:31:43
+> **生成时间:** 2026-04-26 23:06:43
 > **基础 Raw 路径:** `https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/`
 
 ## 🌳 完整目录结构
 ```text
 └── ./
-    ├── AI_CONTEXT_MAP.md
     ├── flatten_code.py
     ├── project.godot
     └── .cursor/
     └── .vscode/
     └── docs/
         └── md/
+            ├── AI_CONTEXT_MAP.md
             ├── IDEAS_SCRAPBOOK.md
             ├── PROJECT_STATUS.md
             ├── README.md
             ├── WORLD_DESIGN.md
+    └── resources/
+        └── sprite_configs/
     └── scenes/
         ├── base_entity_view.tscn
         ├── main.tscn
@@ -30,6 +32,8 @@
             ├── event_bus.gd
             ├── map_generator.gd
             ├── player_controller.gd
+            ├── sprite_config.gd
+            ├── sprite_manager.gd
             ├── static_entity_data.gd
             ├── world_manager.gd
             ├── world_save_data.gd
@@ -56,8 +60,13 @@ AI 协作前请务必先读取此部分的世界观约束。
 ```markdown
 # 零号协议 (Project Zero) - 世界观与核心规则宪法 (V1.0)
 
-**最后更新**: 2026-04-21 22:15
+**最后更新**: 2026-04-25 20:35:00
 **核心哲学**: 以数代形 (MX110 优化), 逻辑渲染分离, 电子民俗生存。可以参考饥荒，僵尸毁灭工程的一些设计思路元素。
+
+## 技术约束（开发宪法）
+
+- **纯数学驱动**：严禁使用 Godot 内置物理引擎（Area2D、PhysicsBody 等）。所有碰撞和距离判定通过纯数学向量计算完成。
+- **架构解耦**：所有生存核心逻辑（代谢、时间、历法）必须运行在 WorldManager 的 `_physics_process` (10Hz) 中。渲染与视觉表现只允许被动监听 EventBus 的信号。
 
 ## 一、 核心支柱
 
@@ -248,6 +257,7 @@ scripts/
 - 每个会话只做一个小闭环（一个系统、一个缺陷、一个可见效果）
 - 每次完成后必须更新本文件的"会话记录"部分
 - 不在长对话里堆积所有细节，把细节沉淀到文档，再在新会话引用文档
+- 涉及架构方向变化时，同步更新本文件的"里程碑规划"部分，确保文档与代码一致
 
 ## 会话启动模板
 
@@ -293,14 +303,14 @@ import datetime
 
 # --- 核心配置 (保持原版命名) ---
 REPO_BASE_URL = "https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/"
-OUTPUT_FILE = "AI_CONTEXT_MAP.md"
+OUTPUT_FILE = "docs/md/AI_CONTEXT_MAP.md"
 
 # 优先级文档：这些文件将出现在生成的 MD 最顶端
 PRIORITY_DOCS = [
     "docs/md/WORLD_DESIGN.md",
     "docs/md/PROJECT_STATUS.md",
     "docs/md/IDEAS_SCRAPBOOK.md",
-    "AI_CONTEXT_MAP.md"
+    "docs/md/AI_CONTEXT_MAP.md"
 ]
 
 # 定义需要包含的文件后缀
@@ -366,6 +376,12 @@ def write_file_content(f, root, filename):
 def generate_map():
     print("🚀 正在生成全量项目逻辑地图 (含世界观置顶)...")
 
+    # 确保输出目录存在
+    output_dir = os.path.dirname(OUTPUT_FILE)
+    if output_dir and not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print(f"📁 创建目录: {output_dir}")
+
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         # 1. 写入元数据
         f.write("# 📂 Project Zero: 全量架构快照 (Full Context)\n")
@@ -383,7 +399,9 @@ def generate_map():
         f.write("AI 协作前请务必先读取此部分的世界观约束。\n\n")
         for doc in PRIORITY_DOCS:
             if os.path.exists(doc) and doc != OUTPUT_FILE:
-                write_file_content(f, ".", doc)
+                doc_dir = os.path.dirname(doc)
+                doc_name = os.path.basename(doc)
+                write_file_content(f, doc_dir if doc_dir else ".", doc_name)
 
         # 4. 遍历写入其余代码文件
         f.write("## 📄 全量代码与配置索引\n")
@@ -392,7 +410,8 @@ def generate_map():
             for filename in files:
                 # 排除已经置顶处理的文件和输出文件本身
                 if any(filename.endswith(ext) for ext in INCLUDE_EXTS):
-                    if filename in PRIORITY_DOCS or filename == OUTPUT_FILE:
+                    file_path = os.path.relpath(os.path.join(root, filename), ".")
+                    if file_path in PRIORITY_DOCS or file_path == OUTPUT_FILE:
                         continue
                     write_file_content(f, root, filename)
 
@@ -429,6 +448,7 @@ config/icon="res://icon.svg"
 
 WorldManager="*res://scripts/core/world_manager.gd"
 EventBus="*res://scripts/core/event_bus.gd"
+SpriteManager="*res://scripts/core/sprite_manager.gd"
 CalendarManager="*res://scripts/core/calendar_manager.gd"
 
 [rendering]
@@ -437,6 +457,288 @@ textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 2d/snap/snap_2d_transforms_to_pixel=true
+
+```
+
+---
+
+### 🔗 文件: docs\md\AI_CONTEXT_MAP.md
+- **Raw 链接:** [docs/md/AI_CONTEXT_MAP.md](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/docs/md/AI_CONTEXT_MAP.md)
+```markdown
+# 📂 Project Zero: 全量架构快照 (Full Context)
+> **生成时间:** 2026-04-26 23:06:43
+> **基础 Raw 路径:** `https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/`
+
+## 🌳 完整目录结构
+```text
+└── ./
+    ├── flatten_code.py
+    ├── project.godot
+    └── .cursor/
+    └── .vscode/
+    └── docs/
+        └── md/
+            ├── AI_CONTEXT_MAP.md
+            ├── IDEAS_SCRAPBOOK.md
+            ├── PROJECT_STATUS.md
+            ├── README.md
+            ├── WORLD_DESIGN.md
+    └── resources/
+        └── sprite_configs/
+    └── scenes/
+        ├── base_entity_view.tscn
+        ├── main.tscn
+        └── ui/
+            ├── debug_hud.tscn
+    └── scripts/
+        └── core/
+            ├── base_entity_view.gd
+            ├── calendar_manager.gd
+            ├── camera.gd
+            ├── entity_data.gd
+            ├── event_bus.gd
+            ├── map_generator.gd
+            ├── player_controller.gd
+            ├── sprite_config.gd
+            ├── sprite_manager.gd
+            ├── static_entity_data.gd
+            ├── world_manager.gd
+            ├── world_save_data.gd
+            ├── world_settings.gd
+            ├── world_spawner.gd
+            ├── world_tuning.gd
+            └── systems/
+                ├── combat_system.gd
+                ├── harvest_system.gd
+                ├── metabolism_system.gd
+                ├── simple_ai_system.gd
+                ├── temperature_system.gd
+        └── ui/
+            ├── debug_hud.gd
+```
+
+---
+
+## 📜 核心设计文档 (Priority Docs)
+AI 协作前请务必先读取此部分的世界观约束。
+
+### 🔗 文件: docs\md\WORLD_DESIGN.md
+- **Raw 链接:** [docs/md/WORLD_DESIGN.md](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/docs/md/WORLD_DESIGN.md)
+```markdown
+# 零号协议 (Project Zero) - 世界观与核心规则宪法 (V1.0)
+
+**最后更新**: 2026-04-25 20:35:00
+**核心哲学**: 以数代形 (MX110 优化), 逻辑渲染分离, 电子民俗生存。可以参考饥荒，僵尸毁灭工程的一些设计思路元素。
+
+## 技术约束（开发宪法）
+
+- **纯数学驱动**：严禁使用 Godot 内置物理引擎（Area2D、PhysicsBody 等）。所有碰撞和距离判定通过纯数学向量计算完成。
+- **架构解耦**：所有生存核心逻辑（代谢、时间、历法）必须运行在 WorldManager 的 `_physics_process` (10Hz) 中。渲染与视觉表现只允许被动监听 EventBus 的信号。
+
+## 一、 核心支柱
+
+1. **时空律法 (Chronos-Spatial Laws)**: 世界由“禁忌”统治。每一天、每一块土地都有其特定的物理/逻辑修正。
+2. **电子民俗 (Cyber-Folkloric)**: 将中式黄历（宜/忌）、纸扎美学与机械末日结合。
+3. **动态生态链 (Dynamic Ecosystem)**: 机械体(Mechanoids)与有机体(Organics)存在真实的资源竞争、领地扩张与种群兴衰。
+
+## 二、 律法系统
+
+- **黄历禁忌 (The Almanac)**: 全局随机。影响代谢速率、仇恨距离、采集收益。
+- **生物群落律法 (Biome Laws)**: 区域固定。
+  - _机械荒原_: 忌金属（穿戴金属受损）。
+  - _猩红湿地_: 宜斋戒（肉食降理智）。
+
+## 三、 世代与演化
+
+- 死亡不重置世界。前世遗骸会转化为后世的资源、防御塔或“数据鬼魂”。
+- 生态系统会根据统治度 (Dominance) 自主进行网格同化。
+
+```
+
+---
+
+### 🔗 文件: docs\md\PROJECT_STATUS.md
+- **Raw 链接:** [docs/md/PROJECT_STATUS.md](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/docs/md/PROJECT_STATUS.md)
+```markdown
+# Project Zero 项目状态
+
+最后更新：2026-04-24 22:04:00
+
+## 项目快照
+
+- **当前阶段**：V0 可玩原型（核心生存闭环已打通）
+- **核心单例**：`WorldManager`、`CalendarManager`、`EventBus`（autoload）
+- **运行主线**：10Hz 逻辑步进 + UI 事件广播 + 存读档重建视图
+- **已有玩法**：移动/攻击/采集/昼夜/禁忌/体温/热源/资源耗尽
+- **代码规模**：13个脚本文件（核心12个 + UI 1个），约2500行代码
+- **主要风险**：系统耦合仍集中在 `WorldManager`，参数散落
+
+## 架构概览
+
+### 已完成功能
+
+- 世界主循环：`WorldManager` 在 `_physics_process` 中以 10Hz 驱动逻辑
+- 核心生存参数：生命、能量、体温、昼夜、禁忌、采集收益已接入计算
+- 数据与表现解耦：`EntityData/StaticEntityData` 作为 Model，`BaseEntityView` 做 View
+- 交互链路完整：移动、攻击、采集、受击反馈、HUD 同步已贯通
+- 世界内容生成：`WorldSpawner` 可批量生成有机体/机械体/障碍物
+- 存读档闭环：`K/L` 测试存档读取，读档后重建视图和相机绑定
+
+### 架构优势
+
+- 逻辑与视觉分离方向正确，符合 `WORLD_DESIGN.md` 的"以数代形"原则
+- 使用 `EventBus` 做全局广播，避免 UI/特效反向污染核心逻辑
+- 主要生存逻辑集中在 `WorldManager`，便于后续统一调度和性能控制
+- 没有依赖 Godot 物理节点做核心判定，符合纯数学约束
+
+### 技术债务
+
+- 常量分散：代谢、伤害、体温阈值等魔法数散落在多个脚本
+- 子系统边界偏松：`WorldManager` 同时承担 Tick、战斗、采集、温度、AI，后续会膨胀
+- 规则可配置性不足：禁忌效果仍是硬编码，难以快速迭代平衡
+- 自动化验证不足：缺少最小回归测试清单
+
+## 优先级与里程碑
+
+### 当前优先级（Top 3）
+
+1. **玩法扩展**：生物群落律法接入、资源再生曲线、行为状态机
+2. **自动化测试**：建立自动化回归测试，替代手测清单
+3. **性能优化**：优化实体查找算法，考虑空间分区
+
+### 里程碑规划
+
+**Milestone A：稳定化（1-2 天）** ✅ 已完成
+- 抽离平衡参数到统一配置（例如 `WorldTuning` 资源）✅
+- 固化手测清单：移动、攻击、采集、昼夜切换、禁忌生效、存读档重绑 ✅
+- 给 `WorldManager` 增加最小 debug 统计（tick 耗时、实体数量、静态实体数量）✅
+
+**Milestone B：系统拆分（2-4 天）** ✅ 已完成
+将 `WorldManager` 内部拆为独立系统函数/模块：
+- `MetabolismSystem` - 代谢系统 ✅
+- `CombatSystem` - 战斗系统 ✅
+- `HarvestSystem` - 采集系统 ✅
+- `TemperatureSystem` - 温度系统 ✅
+- `SimpleAISystem` - 简单AI系统 ✅
+
+保持统一入口仍在 `WorldManager.tick_step()`，但职责清晰、可替换。
+
+**Milestone C：玩法扩展（并行推进）**
+- 生物群落律法（Biome Law）接入地图区域
+- 资源再生/衰减曲线（避免资源点一次采空后无玩法）
+- 机械体/有机体更清晰的行为状态机（巡逻、追击、撤退）
+
+## 代码结构
+
+```
+scripts/
+├── core/           # 核心系统（12个文件）
+│   ├── base_entity_view.gd      # 实体视图基类
+│   ├── calendar_manager.gd      # 律法时钟管理器
+│   ├── camera.gd                # 平滑跟随摄像机
+│   ├── entity_data.gd           # 实体数据模型
+│   ├── event_bus.gd             # 全局信号中枢
+│   ├── map_generator.gd         # 地图生成器
+│   ├── player_controller.gd     # 玩家输入控制器
+│   ├── static_entity_data.gd    # 静态实体数据模型
+│   ├── world_manager.gd         # 世界管理器（核心单例）
+│   ├── world_save_data.gd       # 存档数据容器
+│   ├── world_settings.gd        # 世界设置桥接
+│   ├── world_spawner.gd         # 世界生成器
+│   ├── world_tuning.gd          # 平衡参数资源
+│   └── systems/                 # 系统模块（5个文件）
+│       ├── temperature_system.gd    # 温度系统
+│       ├── metabolism_system.gd     # 代谢系统
+│       ├── combat_system.gd         # 战斗系统
+│       ├── harvest_system.gd        # 采集系统
+│       └── simple_ai_system.gd      # AI系统
+└── ui/             # UI系统（1个文件）
+    └── debug_hud.gd             # 调试HUD界面
+```
+
+## 会话记录
+
+### [2026-04-24]
+
+- 完成：项目全量代码读取与文档整合
+- 优化：重构文档结构，合并 WORKING_MEMORY.md 和 ARCHITECTURE_ROADMAP.md
+- 状态：文档结构简化，职责清晰
+- 完成：抽离平衡参数到 WorldTuning 资源类
+- 更新：WorldManager、PlayerController、WorldSpawner 使用 WorldTuning 参数
+- 新增：`scripts/core/world_tuning.gd`（包含代谢、温度、战斗、采集、生成等所有平衡参数）
+- 状态：魔法数问题解决，参数可在编辑器中调整
+- 完成：Milestone A 稳定化任务
+  - 固化手测清单（基础功能、系统交互、实体行为、参数验证）
+  - 给 WorldManager 增加 debug 统计（tick 耗时、实体数量统计，每秒输出）
+- 完成：Milestone B 系统拆分任务
+  - 新增：`scripts/core/systems/temperature_system.gd`（温度系统）
+  - 新增：`scripts/core/systems/metabolism_system.gd`（代谢系统）
+  - 新增：`scripts/core/systems/combat_system.gd`（战斗系统）
+  - 新增：`scripts/core/systems/harvest_system.gd`（采集系统）
+  - 新增：`scripts/core/systems/simple_ai_system.gd`（AI系统）
+  - 更新：WorldManager 使用所有系统类，职责清晰化
+  - 删除：WorldManager 中的旧函数（_handle_temperature、_handle_metabolism、_handle_mechanical_ai、_find_nearest_resource）
+- 修复：SimpleAISystem 中硬编码的 tick 间隔（0.1），改为从 ticks_per_second 动态计算
+- 状态：系统拆分完成，WorldManager 从 600+ 行缩减至约 400 行
+- 更新：flatten_code.py 添加 PROJECT_STATUS.md 到优先级文档列表
+- 更新：README.md 添加文档规范（时间戳格式）和 flatten_code.py 说明
+
+### [2026-04-23]
+
+- 完成：全量代码与架构状态盘点
+- 新增：`docs/md/ARCHITECTURE_ROADMAP.md`、`WORKING_MEMORY.md`
+- 结论：进入"稳定化 + 系统拆分"阶段最合适
+
+## 回归测试清单（最小必跑）
+
+### 基础功能测试
+- [ ] **移动测试**：玩家可用WASD/方向键移动，受世界边界约束不穿墙
+- [ ] **碰撞测试**：移动时会被静态障碍物阻挡，不会穿透
+- [ ] **攻击测试**：按空格键可攻击，有冷却时间
+- [ ] **采集测试**：按E键可采集附近资源，获得能量并更新HUD
+- [ ] **存档测试**：按K键保存世界状态，控制台显示保存成功
+- [ ] **读档测试**：按L键读取存档，玩家/相机/静态实体重绑成功
+
+### 系统交互测试
+- [ ] **昼夜切换**：时间流逝，夜晚/白天切换正确，有公告提示
+- [ ] **禁忌系统**：忌出行时移动能量消耗增加5倍
+- [ ] **禁忌系统**：忌杀生时攻击伤害降低50%
+- [ ] **禁忌系统**：宜挖掘时采集收益翻倍
+- [ ] **体温系统**：夜晚体温下降，靠近热源时体温回升
+- [ ] **失温伤害**：体温低于30度时持续扣除生命值
+- [ ] **空腹伤害**：能量耗尽时持续扣除生命值
+
+### 实体行为测试
+- [ ] **机械体AI**：机械体会追击玩家和有机体
+- [ ] **机械体攻击**：靠近目标时造成伤害并吸血
+- [ ] **资源耗尽**：资源点采集完毕后消失
+- [ ] **能量上限**：采集能量不超过100上限
+
+### 参数调整验证（使用WorldTuning）
+- [ ] 修改 `tuning.combat_player_damage` 后攻击伤害变化
+- [ ] 修改 `tuning.metabolism_base_rate` 后能量消耗变化
+- [ ] 修改 `tuning.harvest_base_gain` 后采集收益变化
+
+## 开发协作原则
+
+- 每个会话只做一个小闭环（一个系统、一个缺陷、一个可见效果）
+- 每次完成后必须更新本文件的"会话记录"部分
+- 不在长对话里堆积所有细节，把细节沉淀到文档，再在新会话引用文档
+- 涉及架构方向变化时，同步更新本文件的"里程碑规划"部分，确保文档与代码一致
+
+## 会话启动模板
+
+```text
+请先读取以下文件并按优先级理解项目：
+1) docs/md/WORLD_DESIGN.md
+2) docs/md/PROJECT_STATUS.md
+3) （可选）相关模块源码
+
+目标：
+- 先用 5 条以内总结当前阶段
+- 给出本次只做一个小闭环的实现方案
+- 完成后更新 docs/md/PROJECT_STATUS.md 的会话记录
+```
 
 ```
 
@@ -626,6 +928,7 @@ scripts/
 - 每个会话只做一个小闭环（一个系统、一个缺陷、一个可见效果）
 - 每次完成后必须更新本文件的"会话记录"部分
 - 不在长对话里堆积所有细节，把细节沉淀到文档，再在新会话引用文档
+- 涉及架构方向变化时，同步更新本文件的"里程碑规划"部分，确保文档与代码一致
 
 ## 会话启动模板
 
@@ -660,20 +963,71 @@ scripts/
 
 ## 根目录文件
 
-- `.cursorrules`：Cursor 实际生效规则入口（必须在根目录）
-- `AI_CONTEXT_MAP.md`：全量快照主文件（由 `flatten_code.py` 脚本生成，默认根目录）
 - `flatten_code.py`：代码快照生成脚本（用于外部模型无法访问 GitHub 时生成全量代码快照）
+
+## docs/md 目录文件
+
+- `AI_CONTEXT_MAP.md`：全量快照主文件（由 `flatten_code.py` 脚本生成，用于外部云端AI协作）
 
 ## 使用建议
 
 - **新会话启动**：按顺序读取 WORLD_DESIGN.md → PROJECT_STATUS.md
 - **日常开发**：优先参考 PROJECT_STATUS.md 获取当前状态和优先级
 - **创意扩展**：查阅 IDEAS_SCRAPBOOK.md
-- **开发规则**：参考根目录 `.cursorrules` 文件
+- **技术约束**：参考 WORLD_DESIGN.md 中的"技术约束"章节
 
 ## 文档规范
 
 - **时间戳格式**：文档更新时需添加具体时间（格式：YYYY-MM-DD HH:MM:SS）
+
+## 资产管理规范
+
+### 资源目录结构规范
+
+**禁止直接引用外部资源包路径**：
+- ❌ 不要直接引用 `assets/Tiny Swords (Free Pack)/` 下的文件
+- ✅ 如需使用外部资源包的图片，必须复制到 `assets/` 下的规范子目录中
+
+### 规范的assets目录结构
+
+```
+assets/
+├── entities/          # 实体精灵图
+│   ├── organic/       # 有机体（怪物、NPC等）
+│   ├── mechanical/    # 机械体（机器人、载具等）
+│   ├── player/        # 玩家角色
+│   └── static/        # 静态物体（岩石、树木等）
+├── Character/         # 角色相关资源（保留）
+├── Terrain/           # 地形相关资源（保留）
+└── [其他外部资源包]/  # 外部资源包仅作为源文件，不直接引用
+```
+
+### 添加新资源的流程
+
+1. **从外部资源包选择需要的图片**
+2. **复制到对应的规范子目录**：
+   - 有机体 → `assets/entities/organic/`
+   - 机械体 → `assets/entities/mechanical/`
+   - 玩家 → `assets/entities/player/`
+   - 静态物体 → `assets/entities/static/`
+3. **重命名为有意义的文件名**（如 `archer.png` 而非 `Archer_Idle_0.png`）
+4. **在SpriteConfig中引用新路径**
+
+### 示例
+
+```gdscript
+# 正确：引用规范目录
+sprite_path = "res://assets/entities/organic/archer.png"
+
+# 错误：直接引用外部资源包
+sprite_path = "res://assets/Tiny Swords (Free Pack)/Units/Blue Units/Archer/Archer_Idle.png"
+```
+
+### 设计目的
+
+- **路径清晰**：避免未来引入不同资源包时路径混乱
+- **易于维护**：集中管理项目实际使用的资源
+- **可替换性**：便于未来替换资源包而不影响代码
 
 ```
 
@@ -684,8 +1038,13 @@ scripts/
 ```markdown
 # 零号协议 (Project Zero) - 世界观与核心规则宪法 (V1.0)
 
-**最后更新**: 2026-04-21 22:15
+**最后更新**: 2026-04-25 20:35:00
 **核心哲学**: 以数代形 (MX110 优化), 逻辑渲染分离, 电子民俗生存。可以参考饥荒，僵尸毁灭工程的一些设计思路元素。
+
+## 技术约束（开发宪法）
+
+- **纯数学驱动**：严禁使用 Godot 内置物理引擎（Area2D、PhysicsBody 等）。所有碰撞和距离判定通过纯数学向量计算完成。
+- **架构解耦**：所有生存核心逻辑（代谢、时间、历法）必须运行在 WorldManager 的 `_physics_process` (10Hz) 中。渲染与视觉表现只允许被动监听 EventBus 的信号。
 
 ## 一、 核心支柱
 
@@ -712,51 +1071,54 @@ scripts/
 ### 🔗 文件: scenes\base_entity_view.tscn
 - **Raw 链接:** [scenes/base_entity_view.tscn](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/scenes/base_entity_view.tscn)
 ```toml
-[gd_scene load_steps=11 format=3 uid="uid://6h6gfsxf4xjv"]
+[gd_scene load_steps=4 format=3 uid="uid://6h6gfsxf4xjv"]
 
 [ext_resource type="Script" path="res://scripts/core/base_entity_view.gd" id="1_v8anl"]
-[ext_resource type="Texture2D" uid="uid://73jt5ywc0mg5" path="res://assets/Character/Forest.png" id="2_7btyh"]
-[ext_resource type="Texture2D" uid="uid://ts6tgh1335py" path="res://assets/Character/Dungeon_Character.png" id="2_uil4a"]
-[ext_resource type="Texture2D" uid="uid://bjl43ydjd2hsj" path="res://assets/Character/player.png" id="4_afv6t"]
-[ext_resource type="Texture2D" uid="uid://mn8gsdrg6yy0" path="res://assets/Terrain/Decorations/Rocks/Rock1.png" id="5_igl3s"]
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_iq2pf"]
-atlas = ExtResource("2_7btyh")
-region = Rect2(11, 143, 70, 98)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_qh2ak"]
-atlas = ExtResource("2_uil4a")
-region = Rect2(96, 48, 16, 16)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_y7eta"]
-atlas = ExtResource("4_afv6t")
-region = Rect2(115, 48, 69, 150)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mvqol"]
-bg_color = Color(0, 0, 0, 0.352941)
+bg_color = Color(0, 0, 0, 0.5)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sk1cq"]
-bg_color = Color(0.870588, 0, 0, 1)
+bg_color = Color(1, 0.2, 0.2, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
 
 [node name="BaseEntityView" type="Node2D"]
 script = ExtResource("1_v8anl")
-tex_organic = SubResource("AtlasTexture_iq2pf")
-tex_mechanical = SubResource("AtlasTexture_qh2ak")
-tex_player = SubResource("AtlasTexture_y7eta")
-tex_static = ExtResource("5_igl3s")
-scale_mechanical = Vector2(3, 3)
-scale_player = Vector2(0.8, 0.8)
-scale_static = Vector2(2, 2)
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 
-[node name="HealthBar" type="ProgressBar" parent="."]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 visible = false
-custom_minimum_size = Vector2(32, 4)
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 1.0
+
+[node name="HealthBarContainer" type="Control" parent="."]
+z_index = 10
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -40.0
+offset_top = -70.0
+offset_right = 40.0
+offset_bottom = -58.0
 grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HealthBar" type="ProgressBar" parent="HealthBarContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_mvqol")
 theme_override_styles/fill = SubResource("StyleBoxFlat_sk1cq")
 show_percentage = false
@@ -768,7 +1130,7 @@ show_percentage = false
 ### 🔗 文件: scenes\main.tscn
 - **Raw 链接:** [scenes/main.tscn](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/scenes/main.tscn)
 ```toml
-[gd_scene load_steps=13 format=4 uid="uid://c3pno5hr8r6jo"]
+[gd_scene load_steps=15 format=4 uid="uid://c3pno5hr8r6jo"]
 
 [ext_resource type="Texture2D" uid="uid://b13nwsa6xoxb" path="res://assets/Terrain/Tileset/Tilemap_color1.png" id="1_1fjc7"]
 [ext_resource type="Script" path="res://scripts/core/world_spawner.gd" id="1_p6nn4"]
@@ -778,6 +1140,7 @@ show_percentage = false
 [ext_resource type="Script" path="res://scripts/core/camera.gd" id="4_ocl17"]
 [ext_resource type="Script" path="res://scripts/core/entity_data.gd" id="4_q3diw"]
 [ext_resource type="Script" path="res://scripts/core/world_settings.gd" id="5_qn0tx"]
+[ext_resource type="Script" path="res://scripts/core/world_tuning.gd" id="6_8hnto"]
 [ext_resource type="PackedScene" path="res://scenes/ui/debug_hud.tscn" id="6_debug"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_63wuf"]
@@ -832,12 +1195,53 @@ texture_region_size = Vector2i(64, 64)
 tile_size = Vector2i(64, 64)
 sources/1 = SubResource("TileSetAtlasSource_63wuf")
 
+[sub_resource type="Resource" id="Resource_s641t"]
+script = ExtResource("6_8hnto")
+metabolism_base_rate = 0.05
+metabolism_night_multiplier = 1.5
+metabolism_travel_penalty = 5.0
+metabolism_starvation_damage = 0.1
+temp_night_change = -0.5
+temp_heat_source_change = 1.0
+temp_min = 20.0
+temp_max = 36.5
+temp_hypothermia_threshold = 30.0
+temp_hypothermia_damage_multiplier = 0.05
+combat_player_damage = 30.0
+combat_cooldown = 0.4
+combat_radius = 100.0
+combat_angle = 90.0
+combat_mechanical_damage = 5.0
+combat_mechanical_heal = 2.0
+combat_mechanical_detection_range = 400.0
+combat_mechanical_attack_range = 10.0
+combat_mechanical_move_threshold = 5.0
+harvest_distance = 100.0
+harvest_base_gain = 10.0
+harvest_taboo_bonus_multiplier = 2.0
+harvest_energy_max = 100.0
+taboo_killing_damage_penalty = 0.5
+spawn_organic_count = 20
+spawn_mechanical_count = 3
+spawn_static_obstacle_count = 15
+spawn_heat_source_count_min = 3
+spawn_heat_source_count_max = 5
+spawn_resource_count_min = 2
+spawn_resource_count_max = 4
+spawn_range = Vector2(1000, 1000)
+entity_organic_health = 50.0
+entity_mechanical_health = 150.0
+entity_static_health = 9999.0
+entity_collision_radius_min = 30.0
+entity_collision_radius_max = 50.0
+
 [sub_resource type="Resource" id="Resource_3or8t"]
 script = ExtResource("4_q3diw")
 id = "player_01"
 entity_type = "player"
 faction = "neutral"
 health = 100.0
+max_health = 100.0
 position = Vector2(0, 0)
 age_ticks = 0
 move_speed = 150.0
@@ -868,7 +1272,7 @@ mechanical_count = 5
 [node name="PlayerController" type="Node" parent="WorldLogic" node_paths=PackedStringArray("target_view")]
 script = ExtResource("3_22o7b")
 target_view = NodePath("../../Entities/Player")
-attack_radius = 100.0
+tuning = SubResource("Resource_s641t")
 
 [node name="WorldSettings" type="Node2D" parent="WorldLogic"]
 script = ExtResource("5_qn0tx")
@@ -975,21 +1379,12 @@ extends Node2D
 @export var follow_lerp_speed: float = 20.0 # 位置跟随速度
 @export var rotation_speed: float = 10.0 # 转向速度
 
-# 动态贴图配置组
-@export_group("Visual Textures")
-@export var tex_organic: Texture2D = null # 有机体贴图
-@export var tex_mechanical: Texture2D = null # 机械体贴图
-@export var tex_player: Texture2D = null # 玩家贴图
-@export var tex_static: Texture2D = null # 静态障碍物贴图
-
-# 贴图缩放配置
-@export var scale_organic: Vector2 = Vector2(1.0, 1.0) # 有机体缩放
-@export var scale_mechanical: Vector2 = Vector2(1.0, 1.0) # 机械体缩放
-@export var scale_player: Vector2 = Vector2(1.0, 1.0) # 玩家缩放
-@export var scale_static: Vector2 = Vector2(1.0, 1.0) # 静态障碍物缩放
+# Sprite配置（通过entity_id从SpriteManager获取）
+@export var entity_visual_id: String = "" # 可选：指定具体的视觉配置ID，为空则使用entity_type
 
 # 缓存的节点引用
 var sprite_node: Sprite2D = null
+var animated_sprite: AnimatedSprite2D = null
 var health_bar: ProgressBar = null
 
 # 动画和调试状态
@@ -1006,7 +1401,8 @@ var debug_timer: float = 0.0
 func _ready() -> void:
 	# 缓存节点引用（避免_process中频繁get_node）
 	sprite_node = get_node_or_null("Sprite2D")
-	health_bar = get_node_or_null("HealthBar")
+	animated_sprite = get_node_or_null("AnimatedSprite2D")
+	health_bar = get_node_or_null("HealthBarContainer/HealthBar")
 
 	# 加入实体视图组，便于统一管理
 	add_to_group("entity_views")
@@ -1021,7 +1417,7 @@ func _ready() -> void:
 
 	# 初始化血条
 	if health_bar != null:
-		health_bar.max_value = data.health
+		health_bar.max_value = data.max_health
 		health_bar.value = data.health
 
 	# 设置视觉表现（贴图 + 颜色）
@@ -1034,11 +1430,10 @@ func _ready() -> void:
 	# 连接受伤事件（如果EventBus存在）
 	_connect_damage_events()
 
-	print("实体视图初始化完成: ", data.id)
 	# 显示血条
 	if health_bar != null:
-		health_bar.show() # <--- 关键：启动游戏时强制让它显示出来
-		health_bar.max_value = data.health
+		health_bar.show()
+		health_bar.max_value = data.max_health
 		health_bar.value = data.health
 
 
@@ -1093,52 +1488,68 @@ func _handle_facing_direction(_delta: float) -> void:
 
 # 设置视觉表现（贴图 + 颜色）
 func _setup_visuals() -> void:
-	if sprite_node == null:
+	# 从SpriteManager获取配置（Autoload全局变量）
+	var visual_id: String = entity_visual_id if entity_visual_id != "" else data.entity_type
+	var config: SpriteConfig = SpriteManager.get_sprite_config(data.entity_type, visual_id)
+	
+	if config == null:
+		# 没有配置时使用颜色fallback
+		if sprite_node != null:
+			_apply_fallback_color()
 		return
+	
+	# 应用Sprite配置
+	if config.is_animated() and animated_sprite != null:
+		# 动画精灵 - 使用新的多帧配置
+		animated_sprite.sprite_frames = config.create_sprite_frames()
+		animated_sprite.scale = config.scale
+		animated_sprite.position = config.offset
+		animated_sprite.flip_h = config.flip_h
+		animated_sprite.visible = true
+		
+		# 播放默认动画
+		var default_anim: String = config.get_default_animation()
+		if default_anim != "":
+			animated_sprite.play(default_anim)
+		
+		if sprite_node != null:
+			sprite_node.visible = false
+			
+	elif sprite_node != null:
+		# 静态精灵
+		var texture: Texture2D = config.get_texture()
+		if texture != null:
+			sprite_node.texture = texture
+			sprite_node.scale = config.scale
+			sprite_node.position = config.offset
+			sprite_node.flip_h = config.flip_h
+			sprite_node.self_modulate = Color.WHITE
+			sprite_node.visible = true
+		
+		if animated_sprite != null:
+			animated_sprite.visible = false
+	
+	# 给玩家视图添加特殊标签
+	if data.entity_type == "player":
+		add_to_group("player_view")
 
-	var texture_applied: bool = false
+# 播放指定动画（外部调用）
+func play_animation(anim_name: String) -> void:
+	if animated_sprite != null and animated_sprite.sprite_frames != null:
+		if animated_sprite.sprite_frames.has_animation(anim_name):
+			animated_sprite.play(anim_name)
 
-	# 优先应用贴图
-	match data.entity_type:
-		"organic":
-			if tex_organic != null:
-				sprite_node.texture = tex_organic
-				sprite_node.scale = scale_organic # 应用有机体缩放
-				texture_applied = true
-		"mechanical":
-			if tex_mechanical != null:
-				sprite_node.texture = tex_mechanical
-				sprite_node.scale = scale_mechanical # 应用机械体缩放
-				texture_applied = true
-		"player":
-			if tex_player != null:
-				sprite_node.texture = tex_player
-				sprite_node.scale = scale_player # 应用玩家缩放
-				texture_applied = true
+# 获取当前配置支持的动画名称列表
+func get_available_animations() -> Array[String]:
+	var visual_id: String = entity_visual_id if entity_visual_id != "" else data.entity_type
+	var config: SpriteConfig = SpriteManager.get_sprite_config(data.entity_type, visual_id)
+	if config != null:
+		return config.get_animation_names()
+	return []
 
-			# 给玩家视图添加特殊标签，便于摄像机识别
-			add_to_group("player_view")
-		"static":
-			if tex_static != null:
-				sprite_node.texture = tex_static
-				sprite_node.scale = scale_static # 应用静态障碍物缩放
-				texture_applied = true
-		"energy":
-			# 能量体：保持默认贴图，使用颜色区分
-			pass
-		"digital":
-			# 数字体：保持默认贴图，使用颜色区分
-			pass
-		_:
-			# 未知类型：保持默认设置
-			pass
-
-	# 如果贴图应用成功，重置为白色避免颜色污染
-	if texture_applied:
-		sprite_node.self_modulate = Color.WHITE
-	else:
-		# 否则使用颜色作为Fallback
-		_apply_fallback_color()
+# 判断当前是否使用动画精灵
+func is_using_animated_sprite() -> bool:
+	return animated_sprite != null and animated_sprite.visible
 
 
 # 备用颜色方案（当贴图未配置时使用）
@@ -1310,7 +1721,9 @@ func _on_entity_damaged(
 # 更新血条显示
 func _update_health_bar() -> void:
 	if health_bar != null:
-		health_bar.value = data.health
+		health_bar.show() # 确保受伤时显示血条
+		health_bar.max_value = data.max_health
+		health_bar.value = clamp(data.health, 0.0, data.max_health)
 
 
 # 播放受伤反馈动画
@@ -1605,6 +2018,7 @@ extends Resource
 @export var entity_type: String = "unknown"
 @export var faction: String = "neutral"
 @export var health: float = 100.0
+@export var max_health: float = 100.0  # 最大生命值
 @export var position: Vector2 = Vector2.ZERO
 @export var age_ticks: int = 0
 
@@ -1773,14 +2187,10 @@ extends Node
 @export var target_view: BaseEntityView = null
 
 # --- 平衡参数配置 ---
-@export var tuning: WorldTuning = WorldTuning.new()  # 平衡参数资源
+@export var tuning: WorldTuning = WorldTuning.new()  # 平衡参数资源（独立实例，便于开发测试）
 
 # --- 战斗系统 ---
-@export_group("Combat")
-@export var attack_damage: float = 30.0  # 已废弃，使用 tuning.combat_player_damage
-@export var attack_cooldown: float = 0.4  # 已废弃，使用 tuning.combat_cooldown
-@export var attack_radius: float = 40.0  # 已废弃，使用 tuning.combat_radius
-@export var attack_angle: float = 90.0  # 已废弃，使用 tuning.combat_angle
+# 注意：战斗参数现在通过 tuning 配置，废弃以下参数以避免混淆
 
 # --- 采集系统 ---
 @export_group("Harvest")
@@ -2020,6 +2430,286 @@ func get_move_speed() -> float:
 
 ---
 
+### 🔗 文件: scripts\core\sprite_config.gd
+- **Raw 链接:** [scripts/core/sprite_config.gd](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/scripts/core/sprite_config.gd)
+```gdscript
+# res://scripts/core/sprite_config.gd
+# 支持多帧动画的配置资源
+# 每帧使用独立的PNG文件，便于处理不规则图片
+class_name SpriteConfig
+extends Resource
+
+@export_group("Entity Info")
+@export var entity_type: String = "" # organic, mechanical, player, static
+@export var entity_id: String = "" # 具体实体标识
+
+@export_group("Transform")
+@export var scale: Vector2 = Vector2(1.0, 1.0) # 缩放比例
+@export var offset: Vector2 = Vector2.ZERO # 位置偏移
+@export var flip_h: bool = false # 默认是否水平翻转
+
+@export_group("Animation")
+@export var animation_fps: float = 8.0 # 动画帧率
+@export var loop_animation: bool = true # 是否循环播放
+
+# 多帧动画配置（独立PNG文件方案）
+# 示例：{"idle": ["idle_0.png", "idle_1.png"]}
+@export var animations: Dictionary = {}
+
+@export_group("SpriteSheet Cutting")
+@export var use_spritesheet: bool = false # 是否使用SpriteSheet切割
+@export var spritesheet_path: String = "" # 默认SpriteSheet图片路径（当动画没有单独指定源时使用）
+
+# SpriteSheet切割配置：动画名 -> 区域数组
+# 每个区域是 Rect2(x, y, width, height)
+# 示例：{"idle": [Rect2(0, 0, 32, 32), Rect2(32, 0, 32, 32)]}
+@export var spritesheet_regions: Dictionary = {}
+
+# 动画源图片配置（可选）：动画名 -> 源图片路径
+# 允许不同动画使用不同的源图片
+# 示例：{"idle": "res://player_idle.png", "move": "res://player_move.png"}
+# 如果动画未在此指定，则使用默认的 spritesheet_path
+@export var animation_sources: Dictionary = {}
+
+# 静态图片路径（单帧时使用）
+@export var sprite_path: String = "" # 已废弃，保留兼容
+
+# 纹理缓存
+var _texture_cache: Dictionary = {}
+
+# 获取静态纹理（向后兼容）
+func get_texture() -> Texture2D:
+	if sprite_path != "":
+		return _get_cached_texture(sprite_path)
+	# 如果没有设置sprite_path，使用第一个动画的第一帧
+	if not animations.is_empty():
+		var first_anim: Array = animations.values()[0]
+		if first_anim.size() > 0:
+			return _get_cached_texture(first_anim[0])
+	return null
+
+# 获取指定动画的所有纹理
+func get_animation_textures(anim_name: String) -> Array[Texture2D]:
+	var textures: Array[Texture2D] = []
+	if animations.has(anim_name):
+		for path in animations[anim_name]:
+			var tex := _get_cached_texture(path)
+			if tex != null:
+				textures.append(tex)
+	return textures
+
+# 获取所有动画名称
+func get_animation_names() -> Array[String]:
+	var names: Array[String] = []
+	for key in animations.keys():
+		names.append(key)
+	return names
+
+# 判断是否支持动画
+func is_animated() -> bool:
+	if not animations.is_empty():
+		for frames in animations.values():
+			if frames.size() > 1:
+				return true
+	return false
+
+# 缓存纹理避免重复加载
+func _get_cached_texture(path: String) -> Texture2D:
+	if _texture_cache.has(path):
+		return _texture_cache[path]
+	
+	var tex := load(path) as Texture2D
+	if tex != null:
+		_texture_cache[path] = tex
+	return tex
+
+# 创建SpriteFrames资源（用于AnimatedSprite2D）
+func create_sprite_frames() -> SpriteFrames:
+	var frames := SpriteFrames.new()
+	
+	# 方案1：独立PNG文件
+	if not use_spritesheet:
+		for anim_name in animations.keys():
+			var paths: Array = animations[anim_name]
+			for i in range(paths.size()):
+				var tex := _get_cached_texture(paths[i])
+				if tex != null:
+					frames.add_frame(anim_name, tex)
+			
+			frames.set_animation_loop(anim_name, loop_animation)
+			frames.set_animation_speed(anim_name, animation_fps)
+	
+	# 方案2：SpriteSheet切割（支持不同动画使用不同源图片）
+	else:
+		for anim_name in spritesheet_regions.keys():
+			# 确定该动画的源图片路径
+			var source_path: String = spritesheet_path
+			if animation_sources.has(anim_name):
+				source_path = animation_sources[anim_name]
+			
+			if source_path == "":
+				push_warning("[SpriteConfig] 动画 '" + anim_name + "' 没有指定源图片路径")
+				continue
+			
+			var sheet_tex := _get_cached_texture(source_path)
+			if sheet_tex == null:
+				push_warning("[SpriteConfig] 无法加载图片: " + source_path)
+				continue
+			
+			# 添加该动画的所有帧
+			var regions: Array = spritesheet_regions[anim_name]
+			for region in regions:
+				if region is Rect2:
+					var atlas_tex := AtlasTexture.new()
+					atlas_tex.atlas = sheet_tex
+					atlas_tex.region = region
+					frames.add_frame(anim_name, atlas_tex)
+			
+			frames.set_animation_loop(anim_name, loop_animation)
+			frames.set_animation_speed(anim_name, animation_fps)
+	
+	return frames
+
+# 获取默认动画名（第一个动画）
+func get_default_animation() -> String:
+	if use_spritesheet and not spritesheet_regions.is_empty():
+		return spritesheet_regions.keys()[0]
+	elif not animations.is_empty():
+		return animations.keys()[0]
+	return ""
+
+# 获取指定动画的源图片路径
+func get_animation_source(anim_name: String) -> String:
+	if animation_sources.has(anim_name):
+		return animation_sources[anim_name]
+	return spritesheet_path
+
+```
+
+---
+
+### 🔗 文件: scripts\core\sprite_manager.gd
+- **Raw 链接:** [scripts/core/sprite_manager.gd](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/scripts/core/sprite_manager.gd)
+```gdscript
+# res://scripts/core/sprite_manager.gd
+# 注意：此类通过Autoload注册为全局单例，不要直接使用class_name
+extends Node
+
+# 单例引用（通过Autoload自动设置）
+static var instance: Node = null
+
+# Sprite配置字典: key = "entity_type:entity_id", value = SpriteConfig
+var sprite_configs: Dictionary = {}
+
+func _ready() -> void:
+	if instance == null:
+		instance = self
+		# 自动加载所有预设的Sprite配置
+		_load_default_configs()
+	else:
+		queue_free()
+
+# 加载默认配置（从.tres资源文件）
+func _load_default_configs() -> void:
+	var loaded_count := 0
+	
+	# 方案A：扫描resources/sprite_configs/目录下的.tres文件
+	loaded_count += _load_tres_configs_from_dir("res://resources/sprite_configs/")
+	
+	# 方案B：如果目录扫描失败，使用硬编码默认配置作为fallback
+	if loaded_count == 0:
+		loaded_count += _load_hardcoded_fallbacks()
+	
+	print("[SpriteManager] 已加载 ", loaded_count, " 个Sprite配置")
+
+# 从.tres文件加载配置（Godot编辑器可视化方案）
+func _load_tres_configs_from_dir(dir_path: String) -> int:
+	var count := 0
+	var dir := DirAccess.open(dir_path)
+	
+	if dir == null:
+		push_warning("[SpriteManager] 无法打开配置目录: " + dir_path)
+		return 0
+	
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	
+	while file_name != "":
+		if not dir.current_is_dir() and file_name.ends_with(".tres"):
+			var full_path := dir_path + file_name
+			var config := load(full_path) as SpriteConfig
+			
+			if config != null:
+				register_sprite_config(config.entity_type, config.entity_id, config)
+				count += 1
+				print("[SpriteManager] 加载配置: ", file_name, " -> ", config.entity_type, ":", config.entity_id)
+			else:
+				push_warning("[SpriteManager] 无法加载配置: " + full_path)
+		
+		file_name = dir.get_next()
+	
+	dir.list_dir_end()
+	return count
+
+# 硬编码fallback配置（当没有.tres文件时使用）
+func _load_hardcoded_fallbacks() -> int:
+	var fallbacks := [
+		["organic", "organic", "res://assets/entities/organic/archer.png", Vector2(2, 2)],
+		["mechanical", "mechanical", "res://assets/entities/mechanical/warrior.png", Vector2(3, 3)],
+		["player", "player", "res://assets/entities/player/player.png", Vector2(1, 1)],
+		["static", "static", "res://assets/entities/static/rock.png", Vector2(2, 2)],
+	]
+	
+	for data in fallbacks:
+		var config := SpriteConfig.new()
+		config.entity_type = data[0]
+		config.entity_id = data[1]
+		config.sprite_path = data[2]
+		config.scale = data[3]
+		register_sprite_config(config.entity_type, config.entity_id, config)
+	
+	print("[SpriteManager] 使用硬编码fallback配置")
+	return fallbacks.size()
+
+# 注册Sprite配置
+func register_sprite_config(entity_type: String, entity_id: String, config: SpriteConfig) -> void:
+	var key = _get_key(entity_type, entity_id)
+	sprite_configs[key] = config
+
+# 获取Sprite配置
+func get_sprite_config(entity_type: String, entity_id: String) -> SpriteConfig:
+	var key = _get_key(entity_type, entity_id)
+	return sprite_configs.get(key, null)
+
+# 获取Sprite纹理
+func get_sprite_texture(entity_type: String, entity_id: String) -> Texture2D:
+	var config = get_sprite_config(entity_type, entity_id)
+	if config != null:
+		return config.get_texture()
+	return null
+
+# 获取Sprite缩放
+func get_sprite_scale(entity_type: String, entity_id: String) -> Vector2:
+	var config = get_sprite_config(entity_type, entity_id)
+	if config != null:
+		return config.scale
+	return Vector2(1.0, 1.0)
+
+# 获取Sprite偏移
+func get_sprite_offset(entity_type: String, entity_id: String) -> Vector2:
+	var config = get_sprite_config(entity_type, entity_id)
+	if config != null:
+		return config.offset
+	return Vector2.ZERO
+
+# 生成字典键
+func _get_key(entity_type: String, entity_id: String) -> String:
+	return entity_type + ":" + entity_id
+
+```
+
+---
+
 ### 🔗 文件: scripts\core\static_entity_data.gd
 - **Raw 链接:** [scripts/core/static_entity_data.gd](https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/scripts/core/static_entity_data.gd)
 ```gdscript
@@ -2135,19 +2825,16 @@ var debug_timer: float = 0.0
 # --- 初始化 ---
 func _ready() -> void:
 	# 初始化系统
-	temperature_system = load("res://scripts/core/systems/temperature_system.gd").new(tuning, CalendarManager)
-	metabolism_system = load("res://scripts/core/systems/metabolism_system.gd").new(tuning, CalendarManager)
+	temperature_system = load("res://scripts/core/systems/temperature_system.gd").new(tuning, CalendarManager, EventBus)
+	metabolism_system = load("res://scripts/core/systems/metabolism_system.gd").new(tuning, CalendarManager, EventBus)
 	combat_system = load("res://scripts/core/systems/combat_system.gd").new(tuning, CalendarManager, EventBus)
 	harvest_system = load("res://scripts/core/systems/harvest_system.gd").new(tuning, CalendarManager, EventBus)
-	ai_system = load("res://scripts/core/systems/simple_ai_system.gd").new(tuning, world_bounds, ticks_per_second)
+	ai_system = load("res://scripts/core/systems/simple_ai_system.gd").new(tuning, world_bounds, ticks_per_second, EventBus)
 
 	# 生成静态实体
 	_generate_static_entities()
 
-	print("WorldManager 初始化完成")
-	print("固定Tick频率: ", ticks_per_second, " Hz")
-	print("世界边界: ", world_bounds)
-	print("静态实体数量: ", static_entities.size())
+	print("WorldManager 初始化完成，Tick频率: ", ticks_per_second, " Hz，实体数量: ", static_entities.size())
 
 # --- 核心逻辑 ---
 
@@ -2180,11 +2867,11 @@ func _on_logic_tick(delta: float) -> void:
 	# 律法时钟步进（基于真实时间，不受固定tick影响）
 	_step_world_clock(delta)
 
-	# 定期输出 debug 统计
-	debug_timer += delta
-	if debug_timer >= debug_update_interval:
-		debug_timer = 0.0
-		_print_debug_stats()
+	# 定期输出 debug 统计（已禁用以减少console混乱）
+	# debug_timer += delta
+	# if debug_timer >= debug_update_interval:
+	# 	debug_timer = 0.0
+	# 	_print_debug_stats()
 
 # --- 静态实体系统 ---
 
@@ -2199,7 +2886,7 @@ func _generate_static_entities() -> void:
 	# 生成资源点
 	_generate_resource_entities()
 
-	print("[WorldManager] 静态实体生成完成，共生成 ", static_entities.size(), " 个静态实体")
+	# print("[WorldManager] 静态实体生成完成，共生成 ", static_entities.size(), " 个静态实体")
 
 # 生成热源
 func _generate_heat_sources() -> void:
@@ -2218,7 +2905,7 @@ func _generate_heat_sources() -> void:
 		# 发送信号通知View层生成视觉表现
 		EventBus.static_entity_spawned.emit(heat_source)
 
-		print("[WorldManager] 生成热源: ", heat_source.get_debug_info())
+		# print("[WorldManager] 生成热源: ", heat_source.get_debug_info())
 
 # 获取世界边界内的随机位置
 func _get_random_position_within_bounds() -> Vector2:
@@ -2245,10 +2932,10 @@ func _update_proximity_effects(player_data: EntityData) -> void:
 	# 状态变更反馈
 	if was_near_heat != found_heat:
 		if found_heat:
-			print("[WorldManager] 玩家进入热源范围，体温开始回升")
+			# print("[WorldManager] 玩家进入热源范围，体温开始回升")
 			EventBus.announcement.emit("感受到温暖，体温回升中...")
 		else:
-			print("[WorldManager] 玩家离开热源范围")
+			# print("[WorldManager] 玩家离开热源范围")
 			EventBus.announcement.emit("离开温暖区域，注意体温")
 
 # 获取玩家实体（辅助函数）
@@ -2282,9 +2969,9 @@ func _generate_resource_entities() -> void:
 		# 发送信号通知View层生成视觉表现
 		EventBus.static_entity_spawned.emit(resource)
 
-		print("[WorldManager] 生成资源点: ", resource.get_debug_info())
+		# print("[WorldManager] 生成资源点: ", resource.get_debug_info())
 
-	print("[WorldManager] 资源点生成完成，共生成 ", resource_count, " 个资源点")
+	# print("[WorldManager] 资源点生成完成，共生成 ", resource_count, " 个资源点")
 
 
 # world_manager.gd 中的核心逻辑更新
@@ -2528,6 +3215,7 @@ func _print_debug_stats() -> void:
 # 	@export var entities: Array[EntityData] = []
 # 	@export var current_tick: int = 0
 # 	@export var save_timestamp: int = 0
+
 ```
 
 ---
@@ -2765,7 +3453,9 @@ func _create_entity(entity_type: String, entity_id: String) -> void:
 	entity_data.id = entity_id
 	entity_data.entity_type = entity_type
 	entity_data.faction = _get_faction_by_type(entity_type)
-	entity_data.health = _get_initial_health(entity_type)
+	var initial_health: float = _get_initial_health(entity_type)
+	entity_data.health = initial_health
+	entity_data.max_health = initial_health  # 设置最大生命值
 	entity_data.position = _get_random_position()
 
 	# 绑定数据到视图
@@ -2817,7 +3507,9 @@ func _create_static_obstacle(obstacle_id: String) -> void:
 	obstacle_data.id = obstacle_id
 	obstacle_data.entity_type = "static"
 	obstacle_data.faction = "neutral"
-	obstacle_data.health = tuning.entity_static_health  # 障碍物不可摧毁
+	var static_health: float = tuning.entity_static_health
+	obstacle_data.health = static_health
+	obstacle_data.max_health = static_health  # 设置最大生命值
 	obstacle_data.collision_radius = randf_range(tuning.entity_collision_radius_min, tuning.entity_collision_radius_max)
 	obstacle_data.position = _get_random_position()
 
@@ -2982,6 +3674,10 @@ func player_attack(
 		hit_count += 1
 		event_bus.entity_damaged.emit(entity, final_damage, hit_origin)
 
+		# 如果受伤的是玩家，额外发出玩家状态更新信号
+		if entity.entity_type == "player":
+			event_bus.player_stat_updated.emit("health", entity.health)
+
 	return hit_count
 
 ```
@@ -3077,10 +3773,12 @@ extends RefCounted
 
 var tuning: WorldTuning
 var calendar_manager: CalendarManager
+var event_bus: EventBus
 
-func _init(p_tuning: WorldTuning, p_calendar_manager: CalendarManager):
+func _init(p_tuning: WorldTuning, p_calendar_manager: CalendarManager, p_event_bus: EventBus):
 	tuning = p_tuning
 	calendar_manager = p_calendar_manager
+	event_bus = p_event_bus
 
 ## 计算实体速度（通过前后帧位置差）
 func _calculate_entity_velocity(entity: EntityData, ticks_per_second: float) -> Vector2:
@@ -3125,6 +3823,10 @@ func process_metabolism(entity: EntityData, ticks_per_second: float) -> void:
 	if entity.energy <= 0.0:
 		entity.health -= tuning.metabolism_starvation_damage  # 每秒扣除生命值
 		entity.health = max(0.0, entity.health)
+		
+		# 如果是玩家，发出状态更新信号
+		if entity.entity_type == "player":
+			event_bus.player_stat_updated.emit("health", entity.health)
 
 ## 处理多个实体的代谢逻辑
 func process_entities(entities: Array[EntityData], ticks_per_second: float) -> void:
@@ -3150,11 +3852,13 @@ extends RefCounted
 var tuning: WorldTuning
 var world_bounds: Rect2
 var ticks_per_second: float
+var event_bus: EventBus
 
-func _init(p_tuning: WorldTuning, p_world_bounds: Rect2, p_ticks_per_second: float):
+func _init(p_tuning: WorldTuning, p_world_bounds: Rect2, p_ticks_per_second: float, p_event_bus: EventBus):
 	tuning = p_tuning
 	world_bounds = p_world_bounds
 	ticks_per_second = p_ticks_per_second
+	event_bus = p_event_bus
 
 ## 处理机械体AI（针对 MX110 优化的数组查找逻辑）
 func process_mechanical_ai(hunter: EntityData, entities: Array[EntityData]) -> void:
@@ -3201,8 +3905,17 @@ func process_mechanical_ai(hunter: EntityData, entities: Array[EntityData]) -> v
 		# --- 核心改进：伤害逻辑 ---
 		# 只有足够近才吸血
 		if min_dist < tuning.combat_mechanical_attack_range:
-			nearest_prey.health -= tuning.combat_mechanical_damage  # 有机体扣血
+			var damage: float = tuning.combat_mechanical_damage
+			nearest_prey.health -= damage  # 有机体扣血
 			hunter.health = min(100.0, hunter.health + tuning.combat_mechanical_heal)  # 机械体回血
+			
+			# 发出受伤信号（驱动UI更新）
+			event_bus.entity_damaged.emit(nearest_prey, damage, hunter.position)
+			
+			# 如果受伤的是玩家，发出状态更新信号
+			if nearest_prey.entity_type == "player":
+				event_bus.player_stat_updated.emit("health", nearest_prey.health)
+				print("[AI] 机械体 ", hunter.id, " 攻击玩家，造成 ", damage, " 点伤害")
 
 	# 【重要修复】无论有没有猎物，都得守法（不穿墙、不撞墙）
 	hunter.position = _clamp_position(hunter.position)
@@ -3236,10 +3949,12 @@ extends RefCounted
 
 var tuning: WorldTuning
 var calendar_manager: CalendarManager
+var event_bus: EventBus
 
-func _init(p_tuning: WorldTuning, p_calendar_manager: CalendarManager):
+func _init(p_tuning: WorldTuning, p_calendar_manager: CalendarManager, p_event_bus: EventBus):
 	tuning = p_tuning
 	calendar_manager = p_calendar_manager
+	event_bus = p_event_bus
 
 ## 处理单个实体的温度逻辑
 func process_temperature(entity: EntityData, ticks_per_second: float) -> void:
@@ -3269,6 +3984,10 @@ func process_temperature(entity: EntityData, ticks_per_second: float) -> void:
 		var hypothermia_damage: float = (tuning.temp_hypothermia_threshold - entity.temperature) * tuning.temp_hypothermia_damage_multiplier
 		entity.health -= hypothermia_damage
 		entity.health = max(0.0, entity.health)
+		
+		# 如果是玩家，发出状态更新信号
+		if entity.entity_type == "player":
+			event_bus.player_stat_updated.emit("health", entity.health)
 
 ## 处理多个实体的温度逻辑
 func process_entities(entities: Array[EntityData], ticks_per_second: float) -> void:

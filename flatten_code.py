@@ -3,14 +3,14 @@ import datetime
 
 # --- 核心配置 (保持原版命名) ---
 REPO_BASE_URL = "https://raw.githubusercontent.com/wzh-demo123/project_zreo/main/"
-OUTPUT_FILE = "AI_CONTEXT_MAP.md"
+OUTPUT_FILE = "docs/md/AI_CONTEXT_MAP.md"
 
 # 优先级文档：这些文件将出现在生成的 MD 最顶端
 PRIORITY_DOCS = [
     "docs/md/WORLD_DESIGN.md",
     "docs/md/PROJECT_STATUS.md",
     "docs/md/IDEAS_SCRAPBOOK.md",
-    "AI_CONTEXT_MAP.md"
+    "docs/md/AI_CONTEXT_MAP.md"
 ]
 
 # 定义需要包含的文件后缀
@@ -76,6 +76,12 @@ def write_file_content(f, root, filename):
 def generate_map():
     print("🚀 正在生成全量项目逻辑地图 (含世界观置顶)...")
 
+    # 确保输出目录存在
+    output_dir = os.path.dirname(OUTPUT_FILE)
+    if output_dir and not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print(f"📁 创建目录: {output_dir}")
+
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         # 1. 写入元数据
         f.write("# 📂 Project Zero: 全量架构快照 (Full Context)\n")
@@ -93,7 +99,9 @@ def generate_map():
         f.write("AI 协作前请务必先读取此部分的世界观约束。\n\n")
         for doc in PRIORITY_DOCS:
             if os.path.exists(doc) and doc != OUTPUT_FILE:
-                write_file_content
+                doc_dir = os.path.dirname(doc)
+                doc_name = os.path.basename(doc)
+                write_file_content(f, doc_dir if doc_dir else ".", doc_name)
 
         # 4. 遍历写入其余代码文件
         f.write("## 📄 全量代码与配置索引\n")
