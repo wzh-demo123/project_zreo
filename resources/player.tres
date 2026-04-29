@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="EntityData" load_steps=2 format=3 uid="uid://du1b7l187ca3l"]
+
+[ext_resource type="Script" path="res://scripts/core/entity_data.gd" id="1_6r2ld"]
+
+[resource]
+script = ExtResource("1_6r2ld")
+id = "player_01"
+entity_type = "player"
+faction = "neutral"
+health = 100.0
+max_health = 100.0
+position = Vector2(0, 0)
+age_ticks = 0
+move_speed = 150.0
+energy = 100.0
+max_energy = 100.0
+collision_radius = 20.0
+last_position = Vector2(0, 0)
+temperature = 36.5
+is_near_heat_source = false

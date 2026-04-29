@@ -101,37 +101,34 @@ func _on_logic_tick(delta: float) -> void:
 
 # --- 静态实体系统 ---
 
-# 生成静态实体（热源、资源点等）
+# 生成静态实体（资源点等）[热源系统已禁用]
 func _generate_static_entities() -> void:
 	# 清空现有静态实体
 	static_entities.clear()
 
-	# 生成热源
-	_generate_heat_sources()
+	# [热源系统已禁用] _generate_heat_sources()
 
 	# 生成资源点
 	_generate_resource_entities()
 
 	# print("[WorldManager] 静态实体生成完成，共生成 ", static_entities.size(), " 个静态实体")
 
-# 生成热源
-func _generate_heat_sources() -> void:
-	# 随机生成热源
-	var heat_source_count: int = randi() % (tuning.spawn_heat_source_count_max - tuning.spawn_heat_source_count_min + 1) + tuning.spawn_heat_source_count_min
-
-	for i in range(heat_source_count):
-		var heat_source: StaticEntityData = StaticEntityData.new()
-		heat_source.type = "heat_source"
-		heat_source.position = _get_random_position_within_bounds()
-		heat_source.effect_radius = randf_range(80.0, 120.0)  # 随机半径80-120
-		heat_source.heat_strength = randf_range(0.8, 1.2)     # 随机强度0.8-1.2
-
-		static_entities.append(heat_source)
-
-		# 发送信号通知View层生成视觉表现
-		EventBus.static_entity_spawned.emit(heat_source)
-
-		# print("[WorldManager] 生成热源: ", heat_source.get_debug_info())
+# [热源系统已禁用] 生成热源
+# func _generate_heat_sources() -> void:
+#	# 随机生成热源
+#	var heat_source_count: int = randi() % (tuning.spawn_heat_source_count_max - tuning.spawn_heat_source_count_min + 1) + tuning.spawn_heat_source_count_min
+#
+#	for i in range(heat_source_count):
+#		var heat_source: StaticEntityData = StaticEntityData.new()
+#		heat_source.type = "heat_source"
+#		heat_source.position = _get_random_position_within_bounds()
+#		heat_source.effect_radius = randf_range(80.0, 120.0)  # 随机半径80-120
+#		heat_source.heat_strength = randf_range(0.8, 1.2)     # 随机强度0.8-1.2
+#
+#		static_entities.append(heat_source)
+#
+#		# 发送信号通知View层生成视觉表现
+#		EventBus.static_entity_spawned.emit(heat_source)
 
 # 获取世界边界内的随机位置
 func _get_random_position_within_bounds() -> Vector2:
@@ -139,30 +136,29 @@ func _get_random_position_within_bounds() -> Vector2:
 	var y: float = randf_range(world_bounds.position.y + 50, world_bounds.position.y + world_bounds.size.y - 50)
 	return Vector2(x, y)
 
-# 更新玩家与静态实体的邻近效果
-func _update_proximity_effects(player_data: EntityData) -> void:
-	# 热源检测
-	var found_heat: bool = false
+# [热源系统已禁用] 更新玩家与静态实体的邻近效果
+func _update_proximity_effects(_player_data: EntityData) -> void:
+	# [热源系统已禁用] 热源检测
+	# var found_heat: bool = false
+	#
+	# for static_ent in static_entities:
+	#	if static_ent.type == "heat_source":
+	#		var dist: float = player_data.position.distance_to(static_ent.position)
+	#		if dist < static_ent.effect_radius:
+	#			found_heat = true
+	#			break
 
-	for static_ent in static_entities:
-		if static_ent.type == "heat_source":
-			var dist: float = player_data.position.distance_to(static_ent.position)
-			if dist < static_ent.effect_radius:
-				found_heat = true
-				break
+	# [热源系统已禁用] 更新玩家热源状态
+	# var was_near_heat: bool = player_data.is_near_heat_source
+	# player_data.is_near_heat_source = found_heat
 
-	# 更新玩家热源状态
-	var was_near_heat: bool = player_data.is_near_heat_source
-	player_data.is_near_heat_source = found_heat
-
-	# 状态变更反馈
-	if was_near_heat != found_heat:
-		if found_heat:
-			# print("[WorldManager] 玩家进入热源范围，体温开始回升")
-			EventBus.announcement.emit("感受到温暖，体温回升中...")
-		else:
-			# print("[WorldManager] 玩家离开热源范围")
-			EventBus.announcement.emit("离开温暖区域，注意体温")
+	# [热源系统已禁用] 状态变更反馈
+	# if was_near_heat != found_heat:
+	#	if found_heat:
+	#		EventBus.announcement.emit("感受到温暖，体温回升中...")
+	#	else:
+	#		EventBus.announcement.emit("离开温暖区域，注意体温")
+	pass
 
 # 获取玩家实体（辅助函数）
 func _get_player_entity() -> EntityData:
@@ -232,10 +228,10 @@ func tick_step() -> void:
 
 	world_ticked.emit(current_tick)
 
-	# 更新玩家与静态实体的邻近效果
-	var player_entity: EntityData = _get_player_entity()
-	if player_entity != null:
-		_update_proximity_effects(player_entity)
+	# [热源系统已禁用] 更新玩家与静态实体的邻近效果
+	# var player_entity: EntityData = _get_player_entity()
+	# if player_entity != null:
+	#	_update_proximity_effects(player_entity)
 
 # --- 律法时钟系统 ---
 

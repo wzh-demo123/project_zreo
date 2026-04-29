@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://05lsckouu6pl"
-path="res://.godot/imported/archer.png-0b8e2c734a2e68bc7c0c4b0155ed374a.ctex"
+uid="uid://tdpqd5aq3urf"
+path="res://.godot/imported/Lancer_Run.png-11ceb852438879598c5d5d39abd25c71.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/entities/organic/archer.png"
-dest_files=["res://.godot/imported/archer.png-0b8e2c734a2e68bc7c0c4b0155ed374a.ctex"]
+source_file="res://assets/entities/player/Lancer_Run.png"
+dest_files=["res://.godot/imported/Lancer_Run.png-11ceb852438879598c5d5d39abd25c71.ctex"]
 
 [params]
 

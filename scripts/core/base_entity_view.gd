@@ -1,445 +1,155 @@
 # res://scripts/core/base_entity_view.gd
+# 精简版：只负责平滑跟随 data.position 和更新血条
+# 视觉表现由独立的 .tscn 场景直接配置
 class_name BaseEntityView
 extends Node2D
 
 # 数据绑定
 @export var data: EntityData = null
 
-# 视觉参数配置
-@export var follow_lerp_speed: float = 20.0 # 位置跟随速度
-@export var rotation_speed: float = 10.0 # 转向速度
+# 位置跟随速度
+@export var follow_lerp_speed: float = 20.0
 
-# Sprite配置（通过entity_id从SpriteManager获取）
-@export var entity_visual_id: String = "" # 可选：指定具体的视觉配置ID，为空则使用entity_type
-
-# 缓存的节点引用
-var sprite_node: Sprite2D = null
-var animated_sprite: AnimatedSprite2D = null
+# 血条引用
 var health_bar: ProgressBar = null
 
-# 动画和调试状态
-var attack_tween: Tween = null
-var damage_tween: Tween = null
-var harvest_tween: Tween = null
-var debug_attack_origin: Vector2 = Vector2.ZERO
-var debug_attack_dir: Vector2 = Vector2.RIGHT
-var debug_radius: float = 40.0
-var debug_attack_angle: float = 90.0
-var debug_timer: float = 0.0
-
-
 func _ready() -> void:
-	# 缓存节点引用（避免_process中频繁get_node）
-	sprite_node = get_node_or_null("Sprite2D")
-	animated_sprite = get_node_or_null("AnimatedSprite2D")
+	# 获取血条节点
 	health_bar = get_node_or_null("HealthBarContainer/HealthBar")
 
-	# 加入实体视图组，便于统一管理
+	# 加入实体视图组
 	add_to_group("entity_views")
 
-	# 安全检查：确保数据存在
+	# 宽容检查：允许稍后设置 data
 	if data == null:
-		push_error("BaseEntityView: data 未设置！")
+		push_warning("BaseEntityView created without initial data, will be assigned later")
 		return
 
 	# 初始位置同步
+	_setup_from_data()
+
+
+# 从 data 设置初始状态
+func _setup_from_data() -> void:
+	if data == null:
+		return
 	global_position = data.position
 
 	# 初始化血条
 	if health_bar != null:
 		health_bar.max_value = data.max_health
 		health_bar.value = data.health
+		health_bar.show()
 
-	# 设置视觉表现（贴图 + 颜色）
-	_setup_visuals()
-
-	# 注册实体到世界管理器
+	# 注册到世界管理器
 	WorldManager.register_entity(data)
 	WorldManager.world_ticked.connect(_on_world_tick)
 
-	# 连接受伤事件（如果EventBus存在）
-	_connect_damage_events()
+	# 连接受伤事件
+	if not EventBus.entity_damaged.is_connected(_on_entity_damaged):
+		EventBus.entity_damaged.connect(_on_entity_damaged)
 
-	# 显示血条
-	if health_bar != null:
-		health_bar.show()
-		health_bar.max_value = data.max_health
-		health_bar.value = data.health
-
-
-# 每帧更新 - 实现平滑移动和转向
 func _process(delta: float) -> void:
 	if data == null:
 		return
 
-	# 性能优化：静态障碍物不需要每帧更新
-	if data.entity_type == "static":
-		# 只更新Debug绘制（如果需要）
-		if debug_timer > 0.0:
-			debug_timer -= delta
-			queue_redraw()
-		return
-
-	# 平滑位置同步
-	if global_position.distance_to(data.position) < 0.5:
-		global_position = data.position
-	else:
+	# 平滑位置跟随
+	if global_position.distance_to(data.position) > 0.5:
 		global_position = global_position.lerp(data.position, follow_lerp_speed * delta)
-
-	# 平滑转向逻辑
-	_handle_facing_direction(delta)
-
-	# 更新Debug计时器
-	if debug_timer > 0.0:
-		debug_timer -= delta
-		queue_redraw() # 触发重绘
-
-
-# 面向方向处理（RPG风格左右翻转）
-func _handle_facing_direction(_delta: float) -> void:
-	# 确保节点不旋转，保持RPG视角
-	rotation = 0.0
-
-	# 计算移动方向向量
-	var move_direction: Vector2 = data.position - global_position
-
-	# 如果移动距离足够大，才进行翻转计算
-	if move_direction.length() > 0.1:
-		# RPG风格左右翻转逻辑
-		if move_direction.x < -0.1:
-			# 向左移动：翻转贴图
-			if sprite_node != null:
-				sprite_node.flip_h = true
-		elif move_direction.x > 0.1:
-			# 向右移动：正常贴图
-			if sprite_node != null:
-				sprite_node.flip_h = false
-
-
-# 设置视觉表现（贴图 + 颜色）
-func _setup_visuals() -> void:
-	# 从SpriteManager获取配置（Autoload全局变量）
-	var visual_id: String = entity_visual_id if entity_visual_id != "" else data.entity_type
-	var config: SpriteConfig = SpriteManager.get_sprite_config(data.entity_type, visual_id)
-	
-	if config == null:
-		# 没有配置时使用颜色fallback
-		if sprite_node != null:
-			_apply_fallback_color()
-		return
-	
-	# 应用Sprite配置
-	if config.is_animated() and animated_sprite != null:
-		# 动画精灵 - 使用新的多帧配置
-		animated_sprite.sprite_frames = config.create_sprite_frames()
-		animated_sprite.scale = config.scale
-		animated_sprite.position = config.offset
-		animated_sprite.flip_h = config.flip_h
-		animated_sprite.visible = true
-		
-		# 播放默认动画
-		var default_anim: String = config.get_default_animation()
-		if default_anim != "":
-			animated_sprite.play(default_anim)
-		
-		if sprite_node != null:
-			sprite_node.visible = false
-			
-	elif sprite_node != null:
-		# 静态精灵
-		var texture: Texture2D = config.get_texture()
-		if texture != null:
-			sprite_node.texture = texture
-			sprite_node.scale = config.scale
-			sprite_node.position = config.offset
-			sprite_node.flip_h = config.flip_h
-			sprite_node.self_modulate = Color.WHITE
-			sprite_node.visible = true
-		
-		if animated_sprite != null:
-			animated_sprite.visible = false
-	
-	# 给玩家视图添加特殊标签
-	if data.entity_type == "player":
-		add_to_group("player_view")
-
-# 播放指定动画（外部调用）
-func play_animation(anim_name: String) -> void:
-	if animated_sprite != null and animated_sprite.sprite_frames != null:
-		if animated_sprite.sprite_frames.has_animation(anim_name):
-			animated_sprite.play(anim_name)
-
-# 获取当前配置支持的动画名称列表
-func get_available_animations() -> Array[String]:
-	var visual_id: String = entity_visual_id if entity_visual_id != "" else data.entity_type
-	var config: SpriteConfig = SpriteManager.get_sprite_config(data.entity_type, visual_id)
-	if config != null:
-		return config.get_animation_names()
-	return []
-
-# 判断当前是否使用动画精灵
-func is_using_animated_sprite() -> bool:
-	return animated_sprite != null and animated_sprite.visible
-
-
-# 备用颜色方案（当贴图未配置时使用）
-func _apply_fallback_color() -> void:
-	match data.entity_type:
-		"organic":
-			# 有机体：绿色
-			sprite_node.self_modulate = Color.GREEN
-		"mechanical":
-			# 机械体：红色
-			sprite_node.self_modulate = Color.RED
-		"energy":
-			# 能量体：蓝色
-			sprite_node.self_modulate = Color.BLUE
-		"digital":
-			# 数字体：紫色
-			sprite_node.self_modulate = Color.PURPLE
-		_:
-			# 未知类型：白色（默认）
-			sprite_node.self_modulate = Color.WHITE
-
+	else:
+		global_position = data.position
 
 func _on_world_tick(_tick: int) -> void:
 	if data == null:
 		return
-
-	# 这里只负责处理生死逻辑，不操作坐标
+	# 死亡清理
 	if data.health <= 0.0:
 		queue_free()
 
+func _on_entity_damaged(target_data: EntityData, _damage_amount: float, attacker_pos: Vector2) -> void:
+	if target_data != data:
+		return
+	_update_health_bar()
 
-# 播放攻击动画
-func play_attack_anim(
-	origin_pos: Vector2, direction: Vector2, radius: float, angle_deg: float
-) -> void:
-	# 设置Debug信息
-	debug_attack_origin = origin_pos
-	debug_attack_dir = direction
-	debug_radius = radius
-	debug_attack_angle = angle_deg
-	debug_timer = 0.1 # 显示0.1秒
+	# 击退效果
+	if attacker_pos != Vector2.ZERO and WorldManager.tuning.combat_knockback_distance > 0:
+		_apply_knockback(attacker_pos)
 
-	# 创建Tween动画
-	if attack_tween != null:
-		attack_tween.kill()
+	# 受击红光效果
+	_apply_hit_flash()
 
-	attack_tween = create_tween()
-	attack_tween.set_parallel(true) # 并行执行多个动画
+func _update_health_bar() -> void:
+	if health_bar != null and data != null:
+		health_bar.show()
+		health_bar.max_value = data.max_health
+		health_bar.value = clamp(data.health, 0.0, data.max_health)
 
-	# 计算攻击方向（确保使用单位向量）
-	var attack_dir: Vector2 = direction.normalized()
+# 应用击退效果
+func _apply_knockback(attacker_pos: Vector2) -> void:
+	if data == null:
+		return
 
-	# 动画1：只让图片节点移动，避免干扰父节点的位置同步逻辑
-	var shake_offset: Vector2 = attack_dir * 8.0 # 抖动幅度
+	# 计算击退方向（从攻击者指向受伤者）
+	var knockback_dir: Vector2 = (data.position - attacker_pos).normalized()
+	if knockback_dir == Vector2.ZERO:
+		knockback_dir = Vector2.RIGHT
 
-	# 移动图片节点的position（相对于父中心）
-	if sprite_node != null:
-		attack_tween.tween_property(sprite_node, "position", shake_offset, 0.05)
-		attack_tween.tween_property(sprite_node, "position", Vector2.ZERO, 0.05)
+	# 击退目标位置
+	var knockback_target: Vector2 = data.position + knockback_dir * WorldManager.tuning.combat_knockback_distance
+	var knockback_duration: float = WorldManager.tuning.combat_knockback_duration
 
-	# 动画2：轻微缩放效果
-	if sprite_node != null:
-		var original_scale: Vector2 = sprite_node.scale
-		var attack_scale: Vector2 = original_scale * 1.2
+	# 使用 Tween 实现击退动画
+	var tween: Tween = create_tween()
+	tween.tween_property(self, "position", knockback_target, knockback_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
-		attack_tween.tween_property(sprite_node, "scale", attack_scale, 0.05)
-		attack_tween.tween_property(sprite_node, "scale", original_scale, 0.05)
+	# 更新数据位置（让逻辑位置也跟随）
+	data.position = knockback_target
 
-	# 动画完成后清理
-	attack_tween.finished.connect(_on_attack_anim_finished)
+# 应用受击红光效果
+func _apply_hit_flash() -> void:
+	var tuning: WorldTuning = WorldManager.tuning
+	var flash_duration: float = tuning.visual_hit_flash_duration
+	var _flash_intensity: float = tuning.visual_hit_flash_intensity  # 用于调整亮度，当前使用固定值
 
+	# 获取所有可变色节点
+	var sprite: Node = get_node_or_null("Sprite2D")
+	var anim_sprite: Node = get_node_or_null("AnimatedSprite2D")
 
-# 攻击动画完成回调
-func _on_attack_anim_finished() -> void:
-	if attack_tween != null:
-		attack_tween.kill()
-		attack_tween = null
+	var original_modulates: Dictionary = {}
 
+	# 应用更明显的红光 (亮红色)
+	var red_color: Color = Color(1.0, 0.2, 0.2, 1.0)  # 纯红色，轻微保留绿色蓝色避免完全失色
+	var bright_red: Color = Color(1.0, 0.5, 0.5)  # 高亮红色
 
-# Debug绘制函数
-func _draw() -> void:
-	# 只在Debug计时器激活时绘制
-	if debug_timer > 0.0:
-		# 将世界坐标转换为本地坐标
-		var local_attack_origin: Vector2 = to_local(debug_attack_origin)
+	# 记录原始颜色并应用红光
+	if sprite != null and sprite is CanvasItem:
+		original_modulates["sprite"] = sprite.modulate
+		sprite.modulate = bright_red
 
-		# 构建扇形顶点数组
-		var points: PackedVector2Array = PackedVector2Array()
+	if anim_sprite != null and anim_sprite is CanvasItem:
+		original_modulates["anim_sprite"] = anim_sprite.modulate
+		anim_sprite.modulate = bright_red
 
-		# 添加原点（扇形起点）
-		points.append(local_attack_origin)
+	# 使用 Tween 实现闪烁效果
+	var tween: Tween = create_tween()
+	if sprite != null and sprite is CanvasItem:
+		tween.parallel().tween_property(sprite, "modulate", red_color, flash_duration * 0.5)
+	if anim_sprite != null and anim_sprite is CanvasItem:
+		tween.parallel().tween_property(anim_sprite, "modulate", red_color, flash_duration * 0.5)
 
-		# 计算扇形角度范围
-		var start_angle: float = debug_attack_dir.angle() - deg_to_rad(debug_attack_angle) / 2.0
-		var end_angle: float = debug_attack_dir.angle() + deg_to_rad(debug_attack_angle) / 2.0
-
-		# 分段构建扇形边缘（16段）
-		var segment_count: int = 16
-		for i in range(segment_count + 1):
-			# 插值计算当前角度
-			var t: float = float(i) / segment_count
-			var current_angle: float = lerp(start_angle, end_angle, t)
-
-			# 计算边缘点位置
-			var edge_point: Vector2 = Vector2.RIGHT.rotated(current_angle) * debug_radius
-
-			# 转换为本地坐标系并添加到数组
-			points.append(local_attack_origin + edge_point)
-
-		# 绘制扇形（半透明红色）
-		var sector_color: Color = Color(1.0, 0.0, 0.0, 0.3)
-		draw_polygon(points, [sector_color])
-
-		# 绘制攻击方向线
-		var line_color: Color = Color(1.0, 0.0, 0.0, 0.8)
-		var line_end: Vector2 = local_attack_origin + debug_attack_dir * debug_radius
-
-		draw_line(local_attack_origin, line_end, line_color, 2.0)
-
+	# 延迟恢复颜色
+	tween.finished.connect(
+		func() -> void:
+			var restore_tween: Tween = create_tween()
+			if is_instance_valid(sprite) and "sprite" in original_modulates:
+				restore_tween.parallel().tween_property(sprite, "modulate", original_modulates["sprite"], flash_duration * 0.5)
+			if is_instance_valid(anim_sprite) and "anim_sprite" in original_modulates:
+				restore_tween.parallel().tween_property(anim_sprite, "modulate", original_modulates["anim_sprite"], flash_duration * 0.5)
+	)
 
 func _exit_tree() -> void:
 	if data != null and WorldManager.world_ticked.is_connected(_on_world_tick):
 		WorldManager.world_ticked.disconnect(_on_world_tick)
 	if EventBus.entity_damaged.is_connected(_on_entity_damaged):
 		EventBus.entity_damaged.disconnect(_on_entity_damaged)
-	if EventBus.resource_harvested.is_connected(_on_resource_harvested):
-		EventBus.resource_harvested.disconnect(_on_resource_harvested)
-
 	print("实体视图已清理: ", data.id if data != null else "unknown")
-
-
-# # 连接受伤事件
-# func _connect_damage_events() -> void:
-# 	# 检查EventBus是否存在
-# 	if ClassDB.class_exists("EventBus"):
-# 		# 安全连接事件（如果EventBus已注册为Autoload）
-# 		if EventBus.has_signal("entity_damaged"):
-# 			EventBus.entity_damaged.connect(_on_entity_damaged)
-# 	else:
-# 		# 如果EventBus不存在，使用WorldManager的tick信号作为备用
-# 		print("EventBus未找到，使用WorldManager tick作为受伤检测")
-
-
-# 连接受伤事件
-func _connect_damage_events() -> void:
-	# 只要在"项目设置->自动加载"里配了 EventBus，它就等同于全局常量
-	# 我们只需要防重复连接即可
-	if not EventBus.entity_damaged.is_connected(_on_entity_damaged):
-		EventBus.entity_damaged.connect(_on_entity_damaged)
-	if not EventBus.resource_harvested.is_connected(_on_resource_harvested):
-		EventBus.resource_harvested.connect(_on_resource_harvested)
-
-
-# 实体受伤事件处理
-func _on_entity_damaged(
-	target_data: EntityData, _damage_amount: float, attacker_pos: Vector2
-) -> void:
-	# 检查是否是自己受伤
-	if target_data != data:
-		return
-
-	# 更新血条显示
-	_update_health_bar()
-
-	# 播放受伤反馈动画
-	_play_damage_feedback(attacker_pos)
-
-
-# 更新血条显示
-func _update_health_bar() -> void:
-	if health_bar != null:
-		health_bar.show() # 确保受伤时显示血条
-		health_bar.max_value = data.max_health
-		health_bar.value = clamp(data.health, 0.0, data.max_health)
-
-
-# 播放受伤反馈动画
-func _play_damage_feedback(attacker_pos: Vector2) -> void:
-	# 闪红效果
-	_play_flash_red_anim()
-
-	# 击退效果
-	_play_knockback_anim(attacker_pos)
-
-
-# 闪红动画
-func _play_flash_red_anim() -> void:
-	if sprite_node == null:
-		return
-
-	# 清理之前的动画
-	if damage_tween != null:
-		damage_tween.kill()
-
-	damage_tween = create_tween()
-	damage_tween.set_parallel(false) # 顺序执行
-
-	# 记录原始颜色
-	var original_color: Color = sprite_node.self_modulate
-
-	# 闪红动画序列
-	damage_tween.tween_property(sprite_node, "self_modulate", Color.RED, 0.1)
-	damage_tween.tween_property(sprite_node, "self_modulate", original_color, 0.1)
-
-
-# 击退动画
-func _play_knockback_anim(attacker_pos: Vector2) -> void:
-	# 计算击退方向（远离攻击者）
-	var knockback_dir: Vector2 = (data.position - attacker_pos).normalized()
-
-	# 击退距离（根据伤害或固定值）
-	var knockback_distance: float = 20.0
-
-	# 应用瞬间位移
-	data.position += knockback_dir * knockback_distance
-
-	print("击退效果: ", data.id, " 被击退 ", knockback_distance, " 像素")
-
-
-# 采集动作动画（轻微压缩回弹）
-func play_harvest_anim() -> void:
-	if sprite_node == null:
-		return
-
-	if harvest_tween != null:
-		harvest_tween.kill()
-
-	harvest_tween = create_tween()
-	var original_scale: Vector2 = sprite_node.scale
-	harvest_tween.tween_property(sprite_node, "scale", original_scale * 1.08, 0.06)
-	harvest_tween.tween_property(sprite_node, "scale", original_scale, 0.08)
-
-
-# 玩家采集成功后的浮动数字反馈
-func _on_resource_harvested(harvester: EntityData, amount: float) -> void:
-	if data == null or harvester == null:
-		return
-	if data.entity_type != "player":
-		return
-	if data != harvester:
-		return
-
-	_spawn_floating_gain_text(amount)
-
-
-func _spawn_floating_gain_text(amount: float) -> void:
-	var gain_label := Label.new()
-	gain_label.text = "+" + str(int(round(amount)))
-	gain_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	gain_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	gain_label.z_index = 20
-	gain_label.position = Vector2(-20, -110)
-	gain_label.modulate = Color(1.0, 0.95, 0.4, 1.0)
-	add_child(gain_label)
-
-	var tween: Tween = create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(gain_label, "position", gain_label.position + Vector2(0, -35), 0.45)
-	tween.tween_property(gain_label, "modulate:a", 0.0, 0.45)
-	var cleanup := func() -> void:
-		if is_instance_valid(gain_label):
-			gain_label.queue_free()
-	tween.finished.connect(cleanup)

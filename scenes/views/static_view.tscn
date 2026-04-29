@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3 uid="uid://dr8p6ue7kqoko"]
+
+[ext_resource type="PackedScene" uid="uid://6h6gfsxf4xjv" path="res://scenes/base_entity_view.tscn" id="1_17bbs"]
+[ext_resource type="Texture2D" uid="uid://dwrlkm1qutc3j" path="res://assets/Terrain/Decorations/Rocks/Rock1.png" id="2_7amoh"]
+
+[node name="StaticView" instance=ExtResource("1_17bbs")]
+
+[node name="Sprite2D" parent="." index="0"]
+texture = ExtResource("2_7amoh")

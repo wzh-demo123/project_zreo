@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://3oatdttb7ft6"
-path="res://.godot/imported/rock.png-fe601752d001b8b3cbee939fbd5864e7.ctex"
+uid="uid://ch1x58wnh3dfq"
+path="res://.godot/imported/Gold_Resource.png-325af82be56ec694f64c20757d1f817a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/entities/static/rock.png"
-dest_files=["res://.godot/imported/rock.png-fe601752d001b8b3cbee939fbd5864e7.ctex"]
+source_file="res://assets/Terrain/Decorations/Resources/Gold/GoldResource/Gold_Resource.png"
+dest_files=["res://.godot/imported/Gold_Resource.png-325af82be56ec694f64c20757d1f817a.ctex"]
 
 [params]
 

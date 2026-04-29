@@ -22,7 +22,6 @@ script = ExtResource("1_v8anl")
 [node name="Sprite2D" type="Sprite2D" parent="."]
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-visible = false
 
 [node name="HealthBarContainer" type="Control" parent="."]
 z_index = 10

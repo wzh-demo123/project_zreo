@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://73jt5ywc0mg5"
-path="res://.godot/imported/Forest.png-206aad6ecb07e88840d86d14fd0cc0ec.ctex"
+uid="uid://dcny307dskjjj"
+path="res://.godot/imported/Lancer_Up_Attack.png-1a50a1722fb7abfe271984490ba1dc06.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/Character/Forest.png"
-dest_files=["res://.godot/imported/Forest.png-206aad6ecb07e88840d86d14fd0cc0ec.ctex"]
+source_file="res://assets/entities/player/Lancer_Up_Attack.png"
+dest_files=["res://.godot/imported/Lancer_Up_Attack.png-1a50a1722fb7abfe271984490ba1dc06.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ts6tgh1335py"
-path="res://.godot/imported/Dungeon_Character.png-267552bd881d05a7cc3909eb3350e4c8.ctex"
+uid="uid://dq3iqsm5vc0in"
+path="res://.godot/imported/Lancer_Down_Attack.png-2cab5580bcc4048ce8aa967a98b19b82.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/Character/Dungeon_Character.png"
-dest_files=["res://.godot/imported/Dungeon_Character.png-267552bd881d05a7cc3909eb3350e4c8.ctex"]
+source_file="res://assets/entities/player/Lancer_Down_Attack.png"
+dest_files=["res://.godot/imported/Lancer_Down_Attack.png-2cab5580bcc4048ce8aa967a98b19b82.ctex"]
 
 [params]
 

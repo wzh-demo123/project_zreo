@@ -24,12 +24,13 @@ func process_temperature(entity: EntityData, ticks_per_second: float) -> void:
 	var temperature_change: float = 0.0
 
 	# 环境影响：夜晚失温
-	if calendar_manager.is_night and not entity.is_near_heat_source:
+	# [热源系统已禁用] if calendar_manager.is_night and not entity.is_near_heat_source:
+	if calendar_manager.is_night:
 		temperature_change = tuning.temp_night_change
 
-	# 热源恢复：靠近热源时回温
-	if entity.is_near_heat_source:
-		temperature_change = tuning.temp_heat_source_change
+	# [热源系统已禁用] 热源恢复：靠近热源时回温
+	# if entity.is_near_heat_source:
+	#	temperature_change = tuning.temp_heat_source_change
 
 	# 应用体温变化
 	entity.temperature += temperature_change / ticks_per_second

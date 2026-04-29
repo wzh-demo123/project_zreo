@@ -12,7 +12,7 @@ extends Resource
 @export var effect_radius: float = 100.0        # 作用半径
 
 # --- 类型特定属性 ---
-@export var heat_strength: float = 1.0          # 热源强度（仅热源类型）
+# [热源系统已禁用] @export var heat_strength: float = 1.0          # 热源强度（仅热源类型）
 @export var resource_type: String = "wood"      # 资源类型（仅资源类型）
 @export var resource_amount: float = 10.0       # 资源储量（仅资源类型）
 @export var is_depleted: bool = false           # 是否已耗尽
@@ -28,8 +28,8 @@ func _init() -> void:
 # 获取实体类型描述
 func get_type_description() -> String:
 	match type:
-		"heat_source":
-			return "热源（温暖区域）"
+		# [热源系统已禁用] "heat_source":
+		#	return "热源（温暖区域）"
 		"resource":
 			return "资源点（" + resource_type + "）"
 		"altar":

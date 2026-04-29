@@ -15,7 +15,7 @@ extends Resource
 # --- 温度系统参数 ---
 @export_group("Temperature", "temp_")
 @export var temp_night_change: float = -0.5             # 夜晚体温变化（每秒）
-@export var temp_heat_source_change: float = 1.0        # 热源附近体温变化（每秒）
+# [热源系统已禁用] @export var temp_heat_source_change: float = 1.0        # 热源附近体温变化（每秒）
 @export var temp_min: float = 20.0                      # 最低体温限制
 @export var temp_max: float = 36.5                      # 最高体温限制
 @export var temp_hypothermia_threshold: float = 30.0    # 失温伤害阈值
@@ -32,6 +32,14 @@ extends Resource
 @export var combat_mechanical_detection_range: float = 400.0  # 机械体感知范围
 @export var combat_mechanical_attack_range: float = 10.0     # 机械体攻击范围
 @export var combat_mechanical_move_threshold: float = 5.0     # 机械体移动阈值
+@export var combat_knockback_distance: float = 50.0           # 击退距离（像素）
+@export var combat_knockback_duration: float = 0.15           # 击退持续时间（秒）
+
+# --- 视觉特效参数 ---
+@export_group("Visual", "visual_")
+@export var visual_hit_flash_duration: float = 0.1            # 受击红光持续时间（秒）
+@export var visual_hit_flash_intensity: float = 0.8           # 受击红光强度（0-1）
+@export var visual_hit_shake_amount: float = 3.0              # 受击屏幕震动幅度（像素）
 
 # --- 采集系统参数 ---
 @export_group("Harvest", "harvest_")
@@ -49,8 +57,8 @@ extends Resource
 @export var spawn_organic_count: int = 20               # 有机体生成数量
 @export var spawn_mechanical_count: int = 3             # 机械体生成数量
 @export var spawn_static_obstacle_count: int = 15       # 静态障碍物数量
-@export var spawn_heat_source_count_min: int = 3        # 热源最小数量
-@export var spawn_heat_source_count_max: int = 5        # 热源最大数量
+# [热源系统已禁用] @export var spawn_heat_source_count_min: int = 3        # 热源最小数量
+# [热源系统已禁用] @export var spawn_heat_source_count_max: int = 5        # 热源最大数量
 @export var spawn_resource_count_min: int = 2           # 资源点最小数量
 @export var spawn_resource_count_max: int = 4           # 资源点最大数量
 @export var spawn_range: Vector2 = Vector2(1000, 1000)  # 生成区域范围

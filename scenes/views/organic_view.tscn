@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://cxhgqubcwc8k"]
+
+[ext_resource type="PackedScene" uid="uid://6h6gfsxf4xjv" path="res://scenes/base_entity_view.tscn" id="1_2gva0"]
+[ext_resource type="Texture2D" uid="uid://bwcb1qk2ghuwk" path="res://assets/entities/organic/Forest.png" id="2_svprv"]
+
+[node name="OrganicView" instance=ExtResource("1_2gva0")]
+
+[node name="Sprite2D" parent="." index="0"]
+texture = ExtResource("2_svprv")
+region_enabled = true
+region_rect = Rect2(11, 143, 70, 98)

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dwrlkm1qutc3j"
-path="res://.godot/imported/Rock1.png-eb2174320fce67fcc1855a5a9e1921de.ctex"
+uid="uid://b4ruptdsqskmj"
+path="res://.godot/imported/Dungeon_Character.png-15dd03dc34215b83b06ef4efd3c1b676.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/Terrain/Decorations/Rocks/Rock1.png"
-dest_files=["res://.godot/imported/Rock1.png-eb2174320fce67fcc1855a5a9e1921de.ctex"]
+source_file="res://assets/entities/mechanical/Dungeon_Character.png"
+dest_files=["res://.godot/imported/Dungeon_Character.png-15dd03dc34215b83b06ef4efd3c1b676.ctex"]
 
 [params]
 

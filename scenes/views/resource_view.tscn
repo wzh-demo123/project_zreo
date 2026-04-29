@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3 uid="uid://d05mhsf4ludet"]
+
+[ext_resource type="PackedScene" uid="uid://6h6gfsxf4xjv" path="res://scenes/base_entity_view.tscn" id="1_h00dj"]
+[ext_resource type="Texture2D" uid="uid://ch1x58wnh3dfq" path="res://assets/Terrain/Decorations/Resources/Gold/GoldResource/Gold_Resource.png" id="2_dnl4a"]
+
+[node name="ResourceView" instance=ExtResource("1_h00dj")]
+
+[node name="Sprite2D" parent="." index="0"]
+texture = ExtResource("2_dnl4a")

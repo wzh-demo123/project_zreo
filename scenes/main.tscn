@@ -1,15 +1,18 @@
-[gd_scene load_steps=15 format=4 uid="uid://c3pno5hr8r6jo"]
+[gd_scene load_steps=17 format=4 uid="uid://c3pno5hr8r6jo"]
 
 [ext_resource type="Texture2D" uid="uid://b13nwsa6xoxb" path="res://assets/Terrain/Tileset/Tilemap_color1.png" id="1_1fjc7"]
 [ext_resource type="Script" path="res://scripts/core/world_spawner.gd" id="1_p6nn4"]
-[ext_resource type="PackedScene" uid="uid://6h6gfsxf4xjv" path="res://scenes/base_entity_view.tscn" id="2_12kl3"]
 [ext_resource type="Script" path="res://scripts/core/map_generator.gd" id="2_hissr"]
 [ext_resource type="Script" path="res://scripts/core/player_controller.gd" id="3_22o7b"]
+[ext_resource type="PackedScene" uid="uid://cxhgqubcwc8k" path="res://scenes/views/organic_view.tscn" id="4_f1hgn"]
+[ext_resource type="PackedScene" uid="uid://jebi1055byjn" path="res://scenes/views/mechanical_view.tscn" id="4_hbn77"]
 [ext_resource type="Script" path="res://scripts/core/camera.gd" id="4_ocl17"]
-[ext_resource type="Script" path="res://scripts/core/entity_data.gd" id="4_q3diw"]
 [ext_resource type="Script" path="res://scripts/core/world_settings.gd" id="5_qn0tx"]
+[ext_resource type="PackedScene" uid="uid://dr8p6ue7kqoko" path="res://scenes/views/static_view.tscn" id="6_6mhiw"]
 [ext_resource type="Script" path="res://scripts/core/world_tuning.gd" id="6_8hnto"]
 [ext_resource type="PackedScene" path="res://scenes/ui/debug_hud.tscn" id="6_debug"]
+[ext_resource type="PackedScene" uid="uid://btds3d4mt6emb" path="res://scenes/views/player_view.tscn" id="7_1sdr6"]
+[ext_resource type="PackedScene" uid="uid://d05mhsf4ludet" path="res://scenes/views/resource_view.tscn" id="7_8qnqd"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_63wuf"]
 texture = ExtResource("1_1fjc7")
@@ -70,7 +73,6 @@ metabolism_night_multiplier = 1.5
 metabolism_travel_penalty = 5.0
 metabolism_starvation_damage = 0.1
 temp_night_change = -0.5
-temp_heat_source_change = 1.0
 temp_min = 20.0
 temp_max = 36.5
 temp_hypothermia_threshold = 30.0
@@ -84,6 +86,11 @@ combat_mechanical_heal = 2.0
 combat_mechanical_detection_range = 400.0
 combat_mechanical_attack_range = 10.0
 combat_mechanical_move_threshold = 5.0
+combat_knockback_distance = 50.0
+combat_knockback_duration = 0.15
+visual_hit_flash_duration = 0.1
+visual_hit_flash_intensity = 0.8
+visual_hit_shake_amount = 3.0
 harvest_distance = 100.0
 harvest_base_gain = 10.0
 harvest_taboo_bonus_multiplier = 2.0
@@ -92,8 +99,6 @@ taboo_killing_damage_penalty = 0.5
 spawn_organic_count = 20
 spawn_mechanical_count = 3
 spawn_static_obstacle_count = 15
-spawn_heat_source_count_min = 3
-spawn_heat_source_count_max = 5
 spawn_resource_count_min = 2
 spawn_resource_count_max = 4
 spawn_range = Vector2(1000, 1000)
@@ -102,23 +107,6 @@ entity_mechanical_health = 150.0
 entity_static_health = 9999.0
 entity_collision_radius_min = 30.0
 entity_collision_radius_max = 50.0
-
-[sub_resource type="Resource" id="Resource_3or8t"]
-script = ExtResource("4_q3diw")
-id = "player_01"
-entity_type = "player"
-faction = "neutral"
-health = 100.0
-max_health = 100.0
-position = Vector2(0, 0)
-age_ticks = 0
-move_speed = 150.0
-energy = 100.0
-max_energy = 100.0
-collision_radius = 20.0
-last_position = Vector2(0, 0)
-temperature = 36.5
-is_near_heat_source = false
 
 [node name="Main" type="Node2D"]
 
@@ -132,10 +120,12 @@ tile_atlas_coords = Vector2i(1, 1)
 [node name="WorldLogic" type="Node" parent="."]
 
 [node name="WorldSpawner" type="Node2D" parent="WorldLogic"]
+position = Vector2(0, -1)
 script = ExtResource("1_p6nn4")
-base_view_scene = ExtResource("2_12kl3")
-organic_count = 30
-mechanical_count = 5
+organic_scene = ExtResource("4_f1hgn")
+mechanical_scene = ExtResource("4_hbn77")
+static_scene = ExtResource("6_6mhiw")
+resource_scene = ExtResource("7_8qnqd")
 
 [node name="PlayerController" type="Node" parent="WorldLogic" node_paths=PackedStringArray("target_view")]
 script = ExtResource("3_22o7b")
@@ -148,9 +138,7 @@ world_size = Vector2(3000, 3000)
 
 [node name="Entities" type="Node2D" parent="."]
 
-[node name="Player" parent="Entities" instance=ExtResource("2_12kl3")]
-position = Vector2(-4, -10)
-data = SubResource("Resource_3or8t")
+[node name="Player" parent="Entities" instance=ExtResource("7_1sdr6")]
 
 [node name="Camera2D" type="Camera2D" parent="." node_paths=PackedStringArray("target_node")]
 script = ExtResource("4_ocl17")

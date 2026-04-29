@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3 uid="uid://jebi1055byjn"]
+
+[ext_resource type="PackedScene" uid="uid://6h6gfsxf4xjv" path="res://scenes/base_entity_view.tscn" id="1_ohjk2"]
+[ext_resource type="Texture2D" uid="uid://b4ruptdsqskmj" path="res://assets/entities/mechanical/Dungeon_Character.png" id="2_87kk6"]
+
+[node name="MechanicalView" instance=ExtResource("1_ohjk2")]
+
+[node name="Sprite2D" parent="." index="0"]
+scale = Vector2(2.0, 2.0)
+texture = ExtResource("2_87kk6")
+hframes = 7
+vframes = 4
+frame = 13
+region_rect = Rect2(0, 0, 512, 512)
